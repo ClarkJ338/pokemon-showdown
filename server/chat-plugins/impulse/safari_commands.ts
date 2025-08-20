@@ -8,6 +8,7 @@
  * - Optional team or blitz modes
  * - Enhanced UI with |uhtml| and |uhtmlchange|
  * Fixed: Proper game cleanup when games end naturally
+ * Fixed: Status and leaderboard now use proper UI management and clear on game end
  */
 
 import type {Room, User, ChatCommands} from '../../../server/types';
@@ -67,6 +68,9 @@ export const commands: ChatCommands = {
       // FIXED: Set up cleanup callback
       game.onGameEnd = () => {
         safariGames.delete(room.id);
+        // Clear all UI elements when game ends
+        room.add(`|uhtmlchange|safari-status-${room.id}|`);
+        room.add(`|uhtmlchange|safari-leaderboard-${room.id}|`);
       };
       
       safariGames.set(room.id, game);
@@ -119,13 +123,22 @@ export const commands: ChatCommands = {
     status(target: string, room: Room, user: User) {
       if (!room) return this.errorReply("Use in a room.");
       const game = safariGames.get(room.id);
-      if (!game) return this.errorReply("No active Safari Zone.");
+      if (!game) {
+        // Clear status UI if no game exists
+        room.add(`|uhtmlchange|safari-status-${room.id}|`).update();
+        return this.errorReply("No active Safari Zone.");
+      }
+      
       const p = game.participants.get(user.id);
-      if (!p) return this.errorReply("You're not playing.");
+      if (!p) {
+        // Clear status UI if user not in game
+        room.add(`|uhtmlchange|safari-status-${room.id}|`).update();
+        return this.errorReply("You're not playing.");
+      }
 
-      this.sendReplyBox(
+      const statusHTML = 
         `<div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 15px; border-radius: 10px; border: 2px solid #0284c7;">` +
-        `<h4 style="margin: 0 0 10px 0; color: #0c4a6e;">🎯 Your Safari Status</h4>` +
+        `<h4 style="margin: 0 0 10px 0; color: #0c4a6e;">🎯 ${user.name}'s Safari Status</h4>` +
         `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">` +
           `<div><strong>🎾 Poké Balls:</strong> ${p.balls}</div>` +
           `<div><strong>🏆 Score:</strong> ${p.score} BST</div>` +
@@ -135,14 +148,28 @@ export const commands: ChatCommands = {
         `${game.mode === 'team' && game.teamAssignments.has(user.id) ? 
           `<div style="margin-top: 10px; text-align: center; color: #1e40af;"><strong>Team: ${game.teamAssignments.get(user.id)}</strong></div>` : ''
         }` +
-        `</div>`
-      );
+        `<div style="text-align: center; margin-top: 10px;">` +
+          `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
+        `</div>` +
+        `</div>`;
+
+      // Use uhtml for first time, uhtmlchange for updates
+      const existingStatus = room.log.some(entry => entry.includes(`safari-status-${room.id}`));
+      if (existingStatus) {
+        room.add(`|uhtmlchange|safari-status-${room.id}|${statusHTML}`).update();
+      } else {
+        room.add(`|uhtml|safari-status-${room.id}|${statusHTML}`).update();
+      }
     },
 
     leaderboard(target: string, room: Room, user: User) {
       if (!room) return this.errorReply("Use in a room.");
       const game = safariGames.get(room.id);
-      if (!game) return this.errorReply("No active Safari Zone.");
+      if (!game) {
+        // Clear leaderboard UI if no game exists
+        room.add(`|uhtmlchange|safari-leaderboard-${room.id}|`).update();
+        return this.errorReply("No active Safari Zone.");
+      }
 
       const standings = [...game.participants.values()]
         .sort((a, b) => b.score - a.score)
@@ -162,7 +189,7 @@ export const commands: ChatCommands = {
         })
         .join('');
 
-      this.sendReplyBox(
+      const leaderboardHTML = 
         `<div style="background: linear-gradient(135deg, #fef7cd 0%, #fde68a 100%); padding: 15px; border-radius: 10px; border: 2px solid #d97706;">` +
         `<h3 style="margin: 0 0 15px 0; color: #92400e; text-align: center;">🏆 Safari Zone Leaderboard</h3>` +
         `<table style="width: 100%; border-collapse: collapse;">` +
@@ -177,8 +204,18 @@ export const commands: ChatCommands = {
           `</thead>` +
           `<tbody>${standings}</tbody>` +
         `</table>` +
-        `</div>`
-      );
+        `<div style="text-align: center; margin-top: 10px;">` +
+          `<button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
+        `</div>` +
+        `</div>`;
+
+      // Use uhtml for first time, uhtmlchange for updates
+      const existingLeaderboard = room.log.some(entry => entry.includes(`safari-leaderboard-${room.id}`));
+      if (existingLeaderboard) {
+        room.add(`|uhtmlchange|safari-leaderboard-${room.id}|${leaderboardHTML}`).update();
+      } else {
+        room.add(`|uhtml|safari-leaderboard-${room.id}|${leaderboardHTML}`).update();
+      }
     },
 
     end(target: string, room: Room, user: User) {

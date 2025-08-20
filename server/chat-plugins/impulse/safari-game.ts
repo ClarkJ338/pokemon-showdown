@@ -2,6 +2,7 @@
  *
  * Safari Game Class - Core game logic with uhtml UI updates
  * Fixed: Game cleanup now properly removes from safariGames map
+ * Fixed: Better UI state management and cleanup for status/leaderboard
  */
 
 import {Dex} from '../../../sim/dex';
@@ -215,6 +216,9 @@ export class SafariGame {
   private updateUI() {
     const html = this.started ? this.getGameHTML() : this.getLobbyHTML();
     this.room.add(`|uhtmlchange|safari-${this.room.id}|${html}`).update();
+    
+    // Note: We don't auto-refresh status/leaderboard here to avoid spam
+    // Users can use the refresh buttons or re-run the commands manually
   }
 
   // Initial UI creation
@@ -434,7 +438,7 @@ export class SafariGame {
     entry.timeBank = Math.max(0, entry.timeBank - used);
   }
 
-  // End or cancel - FIXED: Now calls cleanup callback
+  // End or cancel - FIXED: Now calls cleanup callback and clears all UIs
   end() {
     this.clearTimers();
     if (this.started) {
@@ -464,9 +468,16 @@ export class SafariGame {
     }
     
     // Clear the main UI
-    this.room.add(`|uhtmlchange|safari-${this.room.id}|`).update();
+    this.room.add(`|uhtmlchange|safari-${this.room.id}|`);
     
-    // FIXED: Call cleanup callback to remove from safariGames map
+    // Clear status and leaderboard UIs - this will be handled by the onGameEnd callback in commands
+    // The callback will call: 
+    // room.add(`|uhtmlchange|safari-status-${room.id}|`);
+    // room.add(`|uhtmlchange|safari-leaderboard-${room.id}|`);
+    
+    this.room.update();
+    
+    // FIXED: Call cleanup callback to remove from safariGames map and clear UIs
     if (this.onGameEnd) {
       this.onGameEnd();
     }
