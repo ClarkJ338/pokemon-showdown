@@ -113,16 +113,28 @@ class SafariGame {
 
     // For team mode, assign two teams
     if (this.mode === 'team') {
-      const ids = [...this.participants.keys()];
-      ids.sort(() => Math.random() - 0.5);
-      ids.forEach((uid, idx) => {
-        const team = idx % 2 === 0 ? 'Team A' : 'Team B';
-        this.teamAssignments.set(uid, team);
-      });
-		 this.room.add(`|raw|<b>Teams assigned:</b> ${ids.map(uid => {
-        return <b>${this.participants.get(uid)!.user.name}</b>(${this.teamAssignments.get(uid)});
-      }).join(', ')}`);
-    }
+  const ids = [...this.participants.keys()];
+  ids.sort(() => Math.random() - 0.5);
+  ids.forEach((uid, idx) => {
+    const team = idx % 2 === 0 ? 'Team A' : 'Team B';
+    this.teamAssignments.set(uid, team);
+  });
+
+  // Build a single string of HTML for all teams
+  const teamsText = ids
+    .map(uid => {
+      const username = this.participants.get(uid)!.user.name;
+      const teamName = this.teamAssignments.get(uid);
+      // Return a quoted string of HTML, not JSX
+      return `<b>${username}</b> (${teamName})`;
+    })
+    .join(', ');
+
+  // Now splice it into your raw HTML template
+  this.room.add(
+    `|raw|<b>Teams assigned:</b> ${teamsText}`
+  ).update();
+	 }
 
     this.room.add(`|raw|<b>Safari Zone Begins!</b> Mode: ${this.mode} — ${this.ballsPerPlayer} balls each. ${
   this.mode !== 'blitz'
