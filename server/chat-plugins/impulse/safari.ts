@@ -62,11 +62,11 @@ class SafariGame {
   // Add a player
   join(user: User) {
     if (this.started && this.mode !== 'blitz') {
-      return user.sendTo(this.room.id, |error|Game already started.);
+      return user.sendTo(this.room.id, `|error|Game already started.`);
     }
     const uid = user.id;
     if (this.participants.has(uid)) {
-      return user.sendTo(this.room.id, |error|You’re already in.);
+      return user.sendTo(this.room.id, `|error|You’re already in.`);
     }
     this.participants.set(uid, {
       user, balls: this.ballsPerPlayer,
