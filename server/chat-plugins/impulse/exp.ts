@@ -382,54 +382,6 @@ export class ExpSystem {
   }
 }
 
-function createProgressBarHTML(percentage: number): string {
-    return (
-      `<div style="width: 200px; height: 18px; background: rgba(200, 200, 200, 0.2); border-radius: 10px; overflow: hidden; border: 1px solid rgba(150, 150, 150, 0.3); margin: 5px auto;">` +
-      `<div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #3498db, #2980b9); box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);"></div>` +
-      `</div>`
-    );
-  }
-
-function createExpDisplayHTML(userid: string, level: number, currentExp: number, expNeeded: number, nextLevelExp: number, progressBar: string, percentage: number): string {
-    return (
-      `<div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.05)); border-radius: 10px; padding: 12px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); border: 1px solid rgba(125, 125, 125, 0.2);">` +
-      
-      `<div style="text-align: center; margin-bottom: 8px;">` +
-      `<div style="font-size: 1.5em; font-weight: bold;">` +
-      `<span>${Impulse.nameColor(userid, true, false)}</span>` +
-      `</div>` +
-      `</div>` +
-      
-      `<div style="text-align: center; margin-bottom: 10px;">` +
-      `<div style="font-size: 1.3em; font-weight: bold; display: inline-block; padding: 3px 12px; border-radius: 15px; background: linear-gradient(90deg, rgba(52, 152, 219, 0.2), rgba(155, 89, 182, 0.2)); color: #3498db;">` +
-      `Level ${level}` +
-      `</div>` +
-      `</div>` +
-      
-      `<div style="margin: 12px 0;">${progressBar}</div>` +
-      
-      `<div style="text-align: center; font-size: 0.9em; margin-bottom: 10px;">` +
-      `${percentage}% complete` +
-      `</div>` +
-      
-      `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">` +
-      `<div style="background: rgba(150, 150, 150, 0.1); padding: 8px; border-radius: 8px; text-align: center;">` +
-      `<div style="font-size: 0.8em; opacity: 0.7;">Current EXP</div>` +
-      `<div style="font-weight: bold; color: #3498db;">${currentExp} ${EXP_UNIT}</div>` +
-      `</div>` +
-      `<div style="background: rgba(150, 150, 150, 0.1); padding: 8px; border-radius: 8px; text-align: center;">` +
-      `<div style="font-size: 0.8em; opacity: 0.7;">Needed for Level ${level + 1}</div>` +
-      `<div style="font-weight: bold; color: #e74c3c;">${expNeeded} ${EXP_UNIT}</div>` +
-      `</div>` +
-      `</div>` +
-      
-      `<div style="font-size: 0.8em; margin-top: 10px; text-align: center; opacity: 0.7;">` +
-      `Total progress: ${currentExp}/${nextLevelExp} ${EXP_UNIT}` +
-      `</div>` +
-      `</div>`
-    );
-  }
-
 // Initialize the system
 Impulse.ExpSystem = ExpSystem;
 
@@ -464,29 +416,68 @@ export const pages: Chat.PageTable = {
 };
 
 export const commands: Chat.Commands = {
-  level: 'exp',
-  exp(target, room, user) {
-    if (!target) target = user.name;
-    if (!this.runBroadcast()) return;
-    
-    const userid = toID(target);
-    const currentExp = ExpSystem.readExp(userid);
-    const currentLevel = ExpSystem.getLevel(currentExp);
-    const nextLevelExp = ExpSystem.getExpForNextLevel(currentLevel + 1);
-    const previousLevelExp = ExpSystem.getExpForNextLevel(currentLevel);
-    
-    const expInCurrentLevel = currentExp - previousLevelExp;
-    const expNeededForNextLevel = nextLevelExp - previousLevelExp;
-    const progressPercentage = Math.floor((expInCurrentLevel / expNeededForNextLevel) * 100);
-    const expNeeded = nextLevelExp - currentExp;
-    
-    const progressBarHTML = this.createProgressBarHTML(progressPercentage);
-    const expDisplayHTML = this.createExpDisplayHTML(
-      userid, currentLevel, currentExp, expNeeded, nextLevelExp, progressBarHTML, progressPercentage
-    );
-    
-    this.sendReplyBox(expDisplayHTML);
-  },
+	level: 'exp',
+	exp(target, room, user) {
+		if (!target) target = user.name;
+		if (!this.runBroadcast()) return;    
+		const userid = toID(target);
+		const currentExp = ExpSystem.readExp(userid);
+		const currentLevel = ExpSystem.getLevel(currentExp);
+		const nextLevelExp = ExpSystem.getExpForNextLevel(currentLevel + 1);
+		const previousLevelExp = ExpSystem.getExpForNextLevel(currentLevel);
+		
+		const expInCurrentLevel = currentExp - previousLevelExp;
+		const expNeededForNextLevel = nextLevelExp - previousLevelExp;
+		const progressPercentage = Math.floor((expInCurrentLevel / expNeededForNextLevel) * 100);
+		const expNeeded = nextLevelExp - currentExp;
+		const executedBy = user.name === target ? '' : ` (Checked by ${Impulse.nameColor(user.name, true, true)})`;
+		
+		// Create a theme-neutral progress bar with better visibility on both light/dark themes
+		const progressBarHTML = 
+			`<div style="width: 200px; height: 18px; background: rgba(200, 200, 200, 0.2); border-radius: 10px; overflow: hidden; border: 1px solid rgba(150, 150, 150, 0.3); margin: 5px auto;">` +
+			`<div style="width: ${progressPercentage}%; height: 100%; background: linear-gradient(90deg, #3498db, #2980b9); box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);"></div>` +
+			`</div>`;
+		
+		// Create a more visually appealing EXP display with stats, ensuring proper string concatenation
+		this.sendReplyBox(
+			`<div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.05)); border-radius: 10px; padding: 12px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); border: 1px solid rgba(125, 125, 125, 0.2);">` +
+			// Name at the top
+			`<div style="text-align: center; margin-bottom: 8px;">` +
+			`<div style="font-size: 1.5em; font-weight: bold;">` +
+			`<span>${Impulse.nameColor(userid, true, false)}</span>` +
+			`</div>` +
+			`</div>` +
+			// Level display
+			`<div style="text-align: center; margin-bottom: 10px;">` +
+			`<div style="font-size: 1.3em; font-weight: bold; display: inline-block; padding: 3px 12px; border-radius: 15px; background: linear-gradient(90deg, rgba(52, 152, 219, 0.2), rgba(155, 89, 182, 0.2)); color: #3498db;">` +
+			`Level ${currentLevel}` +
+			`</div>` +
+			`</div>` +
+			// Progress bar
+			`<div style="margin: 12px 0;">` +
+			`${progressBarHTML}` +
+			`</div>` +
+			// Completion percentage
+			`<div style="text-align: center; font-size: 0.9em; margin-bottom: 10px;">` +
+			`${progressPercentage}% complete` +
+			`</div>` +
+			// Stats boxes
+			`<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">` +
+			`<div style="background: rgba(150, 150, 150, 0.1); padding: 8px; border-radius: 8px; text-align: center;">` +
+			`<div style="font-size: 0.8em; opacity: 0.7;">Current EXP</div>` +
+			`<div style="font-weight: bold; color: #3498db;">${currentExp} ${EXP_UNIT}</div>` +
+			`</div>` +
+			`<div style="background: rgba(150, 150, 150, 0.1); padding: 8px; border-radius: 8px; text-align: center;">` +
+			`<div style="font-size: 0.8em; opacity: 0.7;">Needed for Level ${currentLevel + 1}</div>` +
+			`<div style="font-weight: bold; color: #e74c3c;">${expNeeded} ${EXP_UNIT}</div>` +
+			`</div>` +
+			`</div>` +
+			`<div style="font-size: 0.8em; margin-top: 10px; text-align: center; opacity: 0.7;">` +
+			`Total progress: ${currentExp}/${nextLevelExp} ${EXP_UNIT}` +
+			`</div>` +
+			`</div>`
+		);
+	},
 
   giveexp(target, room, user) {
     this.checkCan('bypassall');
