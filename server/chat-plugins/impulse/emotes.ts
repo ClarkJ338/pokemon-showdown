@@ -3,11 +3,11 @@
 * Credits: TurboRx                     *
 ***************************************/
 
-import { FS } from '../lib/fs';
+import { FS } from '../../../lib';
 
 // ================ Configuration ================
-const EMOTES_FILE_PATH = 'impulse-db/emotes.json';
-const EMOTE_LOGS_PATH = 'impulse-db/emote-logs.json';
+const EMOTES_FILE_PATH = 'databases/emotes.json';
+const EMOTE_LOGS_PATH = 'databases/emote-logs.json';
 const STAFF_ROOM_ID = 'staff';
 const MAX_EMOTE_SIZE = '50px'; // Default max size for emotes
 const EMOTE_COOLDOWN = 3000; // 3 second cooldown per user
