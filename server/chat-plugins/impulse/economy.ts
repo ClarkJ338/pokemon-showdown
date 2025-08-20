@@ -4,11 +4,11 @@
 * Updated By: Prince Sky              *
 ***************************************/
 
-import { FS } from '../lib/fs';
+import { FS } from '../../../lib';
 
 // ================ Configuration ================
-const MONEY_FILE_PATH = 'impulse-db/money.json';
-const MONEY_LOGS_PATH = 'impulse-db/moneylogs.json';
+const MONEY_FILE_PATH = 'databases/money.json';
+const MONEY_LOGS_PATH = 'databases/moneylogs.json';
 const DEFAULT_AMOUNT = 0;
 const CURRENCY = `coins`;
 Impulse.currency = CURRENCY;
@@ -324,7 +324,7 @@ export const commands: Chat.Commands = {
 
   // Admin Commands
   givemoney(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     if (!target) return this.sendReply(`Usage: /givemoney [user], [amount], [reason]`);
     const parts = target.split(',').map(p => p.trim());
     if (parts.length < 2) return this.sendReply(`Usage: /givemoney [user], [amount], [reason]`);
@@ -360,7 +360,7 @@ export const commands: Chat.Commands = {
   },
 
   takemoney(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     if (!target) return this.sendReply(`Usage: /takemoney [user], [amount], [reason]`);
     const parts = target.split(',').map(p => p.trim());
     if (parts.length < 2) return this.sendReply(`Usage: /takemoney [user], [amount], [reason]`);
@@ -396,7 +396,7 @@ export const commands: Chat.Commands = {
   },
 
   resetmoney(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     if (!target) return this.sendReply(`Usage: /resetmoney [user], [reason]`);
     const parts = target.split(',').map(p => p.trim());
     const targetUser = Users.get(parts[0]);
@@ -425,7 +425,7 @@ export const commands: Chat.Commands = {
   },
 
   resetmoneyall(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     const reason = target.trim() || 'No reason specified.';
 
     Economy.resetAllMoney();
@@ -448,7 +448,7 @@ export const commands: Chat.Commands = {
   },
 
   economylogs(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     if (!this.runBroadcast()) return;
     
     const parts = target.split(',').map(p => p.trim());
