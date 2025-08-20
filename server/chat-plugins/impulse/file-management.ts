@@ -12,7 +12,7 @@
 */
 
 import * as https from 'https';
-import { FS } from '../lib/fs';
+import { FS } from '../../../lib/fs';
 
 const GITHUB_API_URL = 'https://api.github.com/gists';
 const GITHUB_TOKEN = Config.githubToken || "";
@@ -176,8 +176,6 @@ export const commands: Chat.ChatCommands = {
     }
   },
 
-  removefile: 'deletefile',
-  deletefile: 'deletefile',
   async deletefile(this: CommandContext, target, room, user) {
     if (!user.hasConsoleAccess(user.connections[0])) return this.errorReply("You don't have permission to use this command.");
     if (!this.runBroadcast()) return;
@@ -210,7 +208,6 @@ export const commands: Chat.ChatCommands = {
     'Note: This action is irreversible. Use with caution.',
   ],
 
-  movefile: 'movefile',
   async movefile(this: CommandContext, target, room, user) {
     if (!user.hasConsoleAccess(user.connections[0])) return this.errorReply("You don't have permission to use this command.");
     if (!this.runBroadcast()) return;
@@ -251,7 +248,6 @@ export const commands: Chat.ChatCommands = {
     'Note: This will delete the source file after copying.',
   ],
 
-  copyfile: 'copyfile',
   async copyfile(this: CommandContext, target, room, user) {
     if (!user.hasConsoleAccess(user.connections[0])) return this.errorReply("You don't have permission to use this command.");
     if (!this.runBroadcast()) return;
