@@ -33,7 +33,7 @@
         "./data/mods/*/*",
         "./dev-tools/*.ts",
         "./lib/*.ts",
-        "./server/**/*.ts",
+        "./server/**/**/*.ts",
         "./server/**/*.tsx",
         "./sim/**/*",
         "./tools/set-import/*.ts",
