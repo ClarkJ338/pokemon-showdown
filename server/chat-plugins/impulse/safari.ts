@@ -1,19 +1,4 @@
-Advanced Safari Zone Chat Plugin
-
-Below is a full-featured, turn-based Safari Zone with these core features:
-
-1. Turn-warning pings  
-2. Automated catch on timeout  
-3. Variable time bank per player  
-5. Wild encounters by rarity tiers  
-8. Spectator mode  
-
-Plus optional modes: team play and blitz race.  
-Save this as server/chat-plugins/safari.ts.
-
-`ts
-/
- * server/chat-plugins/safari.ts
+/* server/chat-plugins/safari.ts
  *
  * Advanced Safari Zone:
  * - Turn-based with per-player time bank and timeout warnings
@@ -23,8 +8,8 @@ Save this as server/chat-plugins/safari.ts.
  * - Optional team or blitz modes
  */
 
-import {Dex} from '../../sim/dex';
-import type {Room, User, ChatCommands} from '../../server/types';
+import {Dex} from '../../../sim/dex';
+import type {Room, User, ChatCommands} from '../../../server/types';
 
 const DEFAULT_BALLS = 30;
 const DEFAULT_TIMEOUT = 30 * 1000; // 30s per turn
@@ -87,42 +72,42 @@ class SafariGame {
       user, balls: this.ballsPerPlayer,
       score: 0, timeBank: this.timeBankDefault,
     });
-    this.room.add(|raw|<b>${user.name}</b> joined Safari Zone.);
-    user.send(|pm|&Safari Zone|${user.name}|You have ${this.ballsPerPlayer} balls and ${this.timeBankDefault/1000}s time bank.);
+    this.room.add(`|raw|<b>${user.name}</b> joined Safari Zone.`);
+    user.send(`|pm|&Safari Zone|${user.name}|You have ${this.ballsPerPlayer} balls and ${this.timeBankDefault/1000}s time bank.`);
     this.room.update();
   }
 
   // Remove before start
   leave(user: User) {
     if (this.started && this.mode !== 'blitz') {
-      return user.sendTo(this.room.id, |error|Cannot leave after start.);
+      return user.sendTo(this.room.id, `|error|Cannot leave after start.`);
     }
     if (!this.participants.delete(user.id)) {
-      return user.sendTo(this.room.id, |error|You’re not in the lobby.);
+      return user.sendTo(this.room.id, `|error|You’re not in the lobby.`);
     }
-    this.room.add(|raw|<b>${user.name}</b> left Safari Zone.);
+    this.room.add(`|raw|<b>${user.name}</b> left Safari Zone.`);
     this.room.update();
   }
 
   // Allow spectators
   spectate(user: User) {
     if (this.participants.has(user.id)) {
-      return user.sendTo(this.room.id, |error|Players cannot spectate.);
+      return user.sendTo(this.room.id, `|error|Players cannot spectate.`);
     }
     this.spectators.add(user.id);
-    user.send(|pm|&Safari Zone|${user.name}|You’re now spectating. Enjoy!);
+    user.send(`|pm|&Safari Zone|${user.name}|You’re now spectating. Enjoy!`);
   }
 
   // Start game
   start(user: User) {
     if (user.id !== this.host.id) {
-      return user.sendTo(this.room.id, |error|Only host can start.);
+      return user.sendTo(this.room.id, `|error|Only host can start.`);
     }
     if (this.started) {
-      return user.sendTo(this.room.id, |error|Already started.);
+      return user.sendTo(this.room.id, `|error|Already started.`);
     }
     if (!this.participants.size) {
-      return user.sendTo(this.room.id, |error|No players joined.);
+      return user.sendTo(this.room.id, `|error|No players joined.`);
     }
     this.started = true;
 
@@ -134,20 +119,16 @@ class SafariGame {
         const team = idx % 2 === 0 ? 'Team A' : 'Team B';
         this.teamAssignments.set(uid, team);
       });
-      this.room.add(`|raw|<b>Teams assigned:</b> ${ids.map(uid => {
+		 this.room.add(`|raw|<b>Teams assigned:</b> ${ids.map(uid => {
         return <b>${this.participants.get(uid)!.user.name}</b>(${this.teamAssignments.get(uid)});
       }).join(', ')}`);
     }
 
-    this.room.add(
-      |raw|<b>Safari Zone Begins!</b> Mode: ${this.mode} +
-       — ${this.ballsPerPlayer} balls each. +
-      (this.mode !== 'blitz'
-        ?  Time bank: ${this.timeBankDefault/1000}s; turn timeout: ${this.turnTimeout/1000}s.
-        :  Blitz duration: ${this.blitzDuration/1000}s.
-      )
-    ).update();
-
+    this.room.add(`|raw|<b>Safari Zone Begins!</b> Mode: ${this.mode} — ${this.ballsPerPlayer} balls each. ${
+  this.mode !== 'blitz'
+    ? `Time bank: ${this.timeBankDefault / 1000}s; turn timeout: ${this.turnTimeout / 1000}s.`
+    : `Blitz duration: ${this.blitzDuration / 1000}s.`
+}`).update();
     // Blitz global timer
     if (this.mode === 'blitz') {
       this.timer = setTimeout(() => this.end(), this.blitzDuration);
@@ -163,7 +144,7 @@ class SafariGame {
   // Process a catch action
   catch(user: User) {
     if (!this.started) {
-      return user.sendTo(this.room.id, |error|Game hasn’t started.);
+      return user.sendTo(this.room.id, `|error|Game hasn’t started.`);
     }
     const uid = user.id;
 
@@ -175,7 +156,7 @@ class SafariGame {
     // Normal/team: turn-based
     const current = this.turnOrder[this.turnIndex];
     if (uid !== current) {
-      return user.sendTo(this.room.id, |error|Not your turn.);
+      return user.sendTo(this.room.id, `|error|Not your turn.`);
     }
 
     // Clear timers
@@ -190,7 +171,7 @@ class SafariGame {
   private processCatch(uid: string, speciesName: string) {
     const entry = this.participants.get(uid)!;
     if (entry.balls <= 0) {
-      return entry.user.sendTo(this.room.id, |error|No balls left.);
+      return entry.user.sendTo(this.room.id, `|error|No balls left.`);
     }
     entry.balls--;
     const species = Dex.species.get(speciesName);
@@ -201,17 +182,17 @@ class SafariGame {
       ?  [${this.teamAssignments.get(uid)}]
       : '';
     this.room.add(
-      |raw|<b>${entry.user.name}${teamSuffix}</b> caught ${species.name} +
-       (BST ${bst}). ${entry.balls} balls left.
+      `|raw|<b>${entry.user.name}${teamSuffix}</b> caught ${species.name} +` +
+       `(BST ${bst}). ${entry.balls} balls left.`
     ).update();
 
     // Notify spectators
     this.spectators.forEach(id => {
       const user = this.room.server.getUser(id);
-      user?.send(|pm|&Safari Spectate|${user.name}|${entry.user.name} caught ${species.name}.);
+      user?.send(`|pm|&Safari Spectate|${user.name}|${entry.user.name} caught ${species.name}.`);
     });
 
-    this.room.logAction([Safari] ${entry.user.name} caught ${species.name} (BST ${bst}).);
+    this.room.logAction(`[Safari] ${entry.user.name} caught ${species.name} (BST ${bst}).`);
   }
 
   // Skip/auto-catch on timeout
@@ -227,7 +208,7 @@ class SafariGame {
       const speciesName = this.autoEncounter();
       this.processCatch(uid, speciesName);
     }
-    this.room.add(|raw|<b>${entry.user.name}</b> timed out and auto-caught.).update();
+    this.room.add(`|raw|<b>${entry.user.name}</b> timed out and auto-caught.`).update();
     this.stepTurn();
   }
 
@@ -254,15 +235,15 @@ class SafariGame {
 
     this.turnStartTime = Date.now();
     this.room.add(
-      |raw|<b>It’s ${entry.user.name}’s turn!</b> +
-       (${entry.timeBank/1000}s left, ${entry.balls} balls). +
-       Use <code>/safari catch</code>.
+      `|raw|<b>It’s ${entry.user.name}’s turn!</b> +` +
+       `(${entry.timeBank/1000}s left, ${entry.balls} balls). +` +
+       `Use <code>/safari catch</code>.`
     ).update();
 
     // Warning 10s before per-turn timeout
     const warnTime = Math.max(0, this.turnTimeout - 10_000);
     this.warningTimer = setTimeout(() => {
-      entry.user.send(|pm|&Safari Zone|${entry.user.name}|10s left to act!);
+      entry.user.send(`|pm|&Safari Zone|${entry.user.name}|10s left to act!`);
     }, warnTime);
 
     // Main timeout
@@ -279,22 +260,27 @@ class SafariGame {
 
   // End or cancel
   end() {
-    this.clearTimers();
-    if (this.started) {
-      // Compute standings
-      const standings = [...this.participants.values()]
-        .sort((a, b) => b.score - a.score)
-        .map((p, i) => {
-          const teamSuffix = this.mode === 'team'
-            ?  [${this.teamAssignments.get(p.user.id)}]
-            : '';
-          return ${i+1}. ${p.user.name}${teamSuffix}: ${p.score};
-        });
-      this.room.add(|raw|<b>Game Over!</b><br />${standings.join('<br />')}).update();
-    } else {
-      this.room.add(|raw|<b>Safari Zone cancelled.</b>).update();
-    }
-    safariGames.delete(this.room.id);
+  this.clearTimers();
+  if (this.started) {
+    // Compute standings
+    const standings = [...this.participants.values()]
+      .sort((a, b) => b.score - a.score)
+      .map((p, i) => {
+        const teamSuffix = this.mode === 'team'
+          ? `[${this.teamAssignments.get(p.user.id)}]`
+          : '';
+        return `${i + 1}. ${p.user.name}${teamSuffix}: ${p.score}`;
+      });
+
+    this.room
+      .add(`|raw|<b>Game Over!</b><br />${standings.join('<br />')}`)
+      .update();
+  } else {
+    this.room
+      .add(`|raw|<b>Safari Zone cancelled.</b>`)
+      .update();
+  }
+  safariGames.delete(this.room.id);
   }
 
   // Weighted random encounter by rarity
@@ -373,123 +359,150 @@ export const commands: ChatCommands = {
 export const commands: ChatCommands = {
   safari: {
     // /safari create [balls],[timeout],[mode],[duration]
-    create(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      if (safariGames.has(room.id)) {
-        return this.errorReply(A Safari Zone is already active.);
-      }
-      const [bStr, tStr, modeStr, dStr] = target.split(',').map(s => s.trim());
-      const balls = parseInt(bStr) || DEFAULT_BALLS;
-      const timeout = parseInt(tStr) ? parseInt(tStr) * 1000 : DEFAULT_TIMEOUT;
-      const mode = (['normal', 'team', 'blitz'] as Mode[]).includes(modeStr as Mode)
-        ? (modeStr as Mode) : 'normal';
-      const duration = mode === 'blitz'
-        ? (parseInt(dStr) ? parseInt(dStr) * 1000 : DEFAULTBLITZDURATION)
-        : 0;
+	  create(target: string, room: Room, user: User) {
+  // 1. Ensure we’re in a room
+  if (!room) return this.errorReply("Use this command in a room.");
 
-      if (balls <= 0) return this.errorReply(Balls must be positive.);
-      if (timeout < 5000) return this.errorReply(Timeout too short.);
-      if (mode === 'blitz' && duration < 10_000) {
-        return this.errorReply(Blitz duration too short.);
-      }
+  // 2. Prevent double‐starts
+  if (safariGames.has(room.id)) {
+    return this.errorReply("A Safari Zone is already active.");
+  }
 
-      const game = new SafariGame(
-        room, user, balls, timeout,
-        DEFAULT_TIMEBANK, duration, mode
-      );
-      safariGames.set(room.id, game);
+  // 3. Parse arguments
+  const [bStr, tStr, modeStr, dStr] = target.split(',').map(s => s.trim());
+  const balls = parseInt(bStr) || DEFAULT_BALLS;
+  const timeout = parseInt(tStr) ? parseInt(tStr) * 1000 : DEFAULT_TIMEOUT;
+  const mode = (['normal', 'team', 'blitz'] as Mode[]).includes(modeStr as Mode)
+    ? (modeStr as Mode)
+    : 'normal';
+  const duration =
+    mode === 'blitz'
+      ? (parseInt(dStr) ? parseInt(dStr) * 1000 : DEFAULT_BLITZ_DURATION)
+      : 0;
 
-      room.add(
-        |raw|<b>${user.name}</b> created Safari Zone:  +
-        ${balls} balls, mode=${mode} +
-        (mode !== 'blitz'
-          ? , ${timeout/1000}s per turn, ${DEFAULT_TIMEBANK/1000}s time bank.
-          : , duration=${duration/1000}s.
-        ) +  (/safari join)
-      ).update();
-    },
+  // 4. Validate values
+  if (balls <= 0) return this.errorReply("Balls must be positive.");
+  if (timeout < 5000) return this.errorReply("Timeout too short.");
+  if (mode === 'blitz' && duration < 10_000) {
+    return this.errorReply("Blitz duration too short.");
+  }
 
-    join(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply(No active Safari Zone.);
-      game.join(user);
-    },
+  // 5. Create and store the game
+  const game = new SafariGame(
+    room,
+    user,
+    balls,
+    timeout,
+    DEFAULT_TIMEBANK,
+    duration,
+    mode,
+  );
+  safariGames.set(room.id, game);
 
-    leave(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply(No active Safari Zone.);
-      game.leave(user);
-    },
+  // 6. Announce with a single, balanced template literal
+  room
+    .add(
+      `|raw|<b>${user.name}</b> created Safari Zone: ${balls} balls, mode=${mode}. ${
+        mode !== 'blitz'
+          ? `Turn timeout: ${timeout / 1000}s; time bank: ${DEFAULT_TIMEBANK / 1000}s.`
+          : `Blitz duration: ${duration / 1000}s.`
+      } <button name="send" value="/safari join">Join Safari</button>`
+    )
+    .update();
+},
 
-    spectate(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply(No active Safari Zone.);
-      game.spectate(user);
-    },
+	  join(target: string, room: Room, user: User) {
+  if (!room) return this.errorReply("Use in a room.");
+  const game = safariGames.get(room.id);
+  if (!game) return this.errorReply("No active Safari Zone.");
+  game.join(user);
+},
 
-    start(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply(No active Safari Zone.);
-      game.start(user);
-    },
+leave(target: string, room: Room, user: User) {
+  if (!room) return this.errorReply("Use in a room.");
+  const game = safariGames.get(room.id);
+  if (!game) return this.errorReply("No active Safari Zone.");
+  game.leave(user);
+},
 
-    catch(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply(No active Safari Zone.);
-      game.catch(user);
-    },
+spectate(target: string, room: Room, user: User) {
+  if (!room) return this.errorReply("Use in a room.");
+  const game = safariGames.get(room.id);
+  if (!game) return this.errorReply("No active Safari Zone.");
+  game.spectate(user);
+},
 
-    status(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply(No active Safari Zone.);
-      const p = game.participants.get(user.id);
-      if (!p) return this.errorReply(You’re not playing.);
-      user.sendTo(room.id,
-        |pm|&Safari Status|${user.name}| +
-        Balls: ${p.balls}, Score: ${p.score}, Time left: ${Math.ceil(p.timeBank/1000)}s
-      );
-    },
+start(target: string, room: Room, user: User) {
+  if (!room) return this.errorReply("Use in a room.");
+  const game = safariGames.get(room.id);
+  if (!game) return this.errorReply("No active Safari Zone.");
+  game.start(user);
+},
 
-    leaderboard(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply(No active Safari Zone.);
-      game.end();
-    },
+catch(target: string, room: Room, user: User) {
+  if (!room) return this.errorReply("Use in a room.");
+  const game = safariGames.get(room.id);
+  if (!game) return this.errorReply("No active Safari Zone.");
+  game.catch(user);
+},
 
-    end(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply(No active Safari Zone.);
-      if (user.id !== game.host.id) {
-        return this.errorReply(Only the host can end the game.);
-      }
-      game.end();
-    },
+	  status(target: string, room: Room, user: User) {
+  if (!room) return this.errorReply("Use in a room.");
+  const game = safariGames.get(room.id);
+  if (!game) return this.errorReply("No active Safari Zone.");
+  const p = game.participants.get(user.id);
+  if (!p) return this.errorReply("You're not playing.");
 
-    help() {
-      this.sendReplyBox(`
-        <b>Safari Zone Commands</b><br />
-        • /safari create [balls],[timeout],[mode],[duration] – Create a game:<br />
-          • balls: number of Poké Balls (default ${DEFAULT_BALLS})<br />
-          • timeout: per-turn timeout in seconds (default ${DEFAULT_TIMEOUT/1000})<br />
-          • mode: normal (default), team, or blitz<br />
-          • duration: blitz duration in seconds (default ${DEFAULTBLITZDURATION/1000})<br />
-        • /safari join       – Join the game<br />
-        • /safari leave      – Leave before start<br />
-        • /safari spectate   – Watch without playing<br />
-        • /safari start      – Host starts the game<br />
-        • /safari catch      – Catch on your turn (or anytime in blitz)<br />
-        • /safari status     – View your stats<br />
-        • /safari leaderboard– Show final standings (or auto on end)<br />
-        • /safari end        – Host cancels/ends the game<br />
-      `);
-    },
+  user.sendTo(
+    room.id,
+    `|pm|&Safari Status|${user.name}|` +
+    `Balls: ${p.balls}, Score: ${p.score}, ` +
+    `Time left: ${Math.ceil(p.timeBank / 1000)}s`
+  );
+},
+
+leaderboard(target: string, room: Room, user: User) {
+  if (!room) return this.errorReply("Use in a room.");
+  const game = safariGames.get(room.id);
+  if (!game) return this.errorReply("No active Safari Zone.");
+
+  const standings = [...game.participants.values()]
+    .sort((a, b) => b.score - a.score)
+    .map((p, i) => `${i + 1}. ${p.user.name}: ${p.score}`);
+
+  user.sendTo(
+    room.id,
+    `|pm|&Safari Leaderboard|${user.name}|${standings.join("<br />")}`
+  );
+},
+
+end(target: string, room: Room, user: User) {
+  if (!room) return this.errorReply("Use in a room.");
+  const game = safariGames.get(room.id);
+  if (!game) return this.errorReply("No active Safari Zone.");
+  if (user.id !== game.host.id) {
+    return this.errorReply("Only the host can end the game.");
+  }
+  game.end();
+},
+
+	  help(target: string, room: Room, user: User) {
+  this.sendReplyBox(
+    `<b>Safari Zone Commands</b><br />` +
+    ` • <code>/safari create [balls],[timeout],[mode],[duration]</code> – Create a game:<br />` +
+      `&nbsp;&nbsp;• balls: number of Poké Balls (default ${DEFAULT_BALLS})<br />` +
+      `&nbsp;&nbsp;• timeout: per-turn timeout in seconds (default ${DEFAULT_TIMEOUT / 1000})<br />` +
+      `&nbsp;&nbsp;• mode: normal (default), team, or blitz<br />` +
+      `&nbsp;&nbsp;• duration: blitz duration in seconds (default ${DEFAULT_BLITZ_DURATION / 1000})<br />` +
+    `• <code>/safari join</code> – Join the game<br />` +
+    `• <code>/safari leave</code> – Leave before start<br />` +
+    `• <code>/safari spectate</code> – Watch without playing<br />` +
+    `• <code>/safari start</code> – Host starts the game<br />` +
+    `• <code>/safari catch</code> – Catch on your turn (or anytime in blitz)<br />` +
+    `• <code>/safari status</code> – View your stats<br />` +
+    `• <code>/safari leaderboard</code> – Show final standings (or auto on end)<br />` +
+    `• <code>/safari end</code> – Host cancels/ends the game<br />`
+  );
+},
   },
 };
