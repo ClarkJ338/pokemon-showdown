@@ -181,30 +181,48 @@ class SafariGame {
 
   // Core catch logic
   private processCatch(uid: string, speciesName: string) {
-    const entry = this.participants.get(uid)!;
-    if (entry.balls <= 0) {
-      return entry.user.sendTo(this.room.id, `|error|No balls left.`);
+  const entry = this.participants.get(uid)!;
+  // 1) Prevent underflow
+  if (entry.balls <= 0) {
+    return entry.user.sendTo(this.room.id, `|error|No balls left.`);
+  }
+  entry.balls--;
+
+  // 2) Lookup and sum BST
+  const species = Dex.species.get(speciesName);
+  const bst = Object
+    .values(species.baseStats)
+    .reduce((sum, val) => sum + val, 0);
+  entry.score += bst;
+
+  // 3) Only append a team tag when in team mode
+  const teamSuffix = this.mode === 'team'
+    ? ` [${this.teamAssignments.get(uid)}]`
+    : '';
+
+  // 4) Build the full raw HTML message in one go
+  const catchMessage = `|raw|<b>${entry.user.name}${teamSuffix}</b> caught ${species.name} ` +
+    `(BST ${bst}). ${entry.balls} balls left.`;
+
+  // 5) Post it to the room
+  this.room.add(catchMessage);
+  this.room.update();
+
+  // 6) Notify any spectators privately
+  for (const sid of this.spectators) {
+    const spectator = this.room.server.getUser(sid);
+    if (spectator) {
+      spectator.send(
+        `|pm|&Safari Spectate|${spectator.name}|` +
+        `${entry.user.name} caught ${species.name}.`
+      );
     }
-    entry.balls--;
-    const species = Dex.species.get(speciesName);
-    const bst = Object.values(species.baseStats).reduce((a, b) => a + b, 0);
-    entry.score += bst;
+  }
 
-    const teamSuffix = this.mode === 'team'
-      ?  [${this.teamAssignments.get(uid)}]
-      : '';
-    this.room.add(
-      `|raw|<b>${entry.user.name}${teamSuffix}</b> caught ${species.name} +` +
-       `(BST ${bst}). ${entry.balls} balls left.`
-    ).update();
-
-    // Notify spectators
-    this.spectators.forEach(id => {
-      const user = this.room.server.getUser(id);
-      user?.send(`|pm|&Safari Spectate|${user.name}|${entry.user.name} caught ${species.name}.`);
-    });
-
-    this.room.logAction(`[Safari] ${entry.user.name} caught ${species.name} (BST ${bst}).`);
+  // 7) Log for staff audits
+  this.room.logAction(
+    `[Safari] ${entry.user.name} caught ${species.name} (BST ${bst}).`
+  );
   }
 
   // Skip/auto-catch on timeout
