@@ -113,7 +113,8 @@ export const commands: Chat.ChatCommands = {
       try {
         const gistUrl = await uploadToGist(data, file, `File: ${file} uploaded by ${user.id}`);
         this.sendReplyBox(`<strong>File:</strong> ${file}<br>` +
-          `<strong>Gist URL:</strong> <button onclick="window.open('${gistUrl}', '_blank')" style="padding: 4px 8px; background-color: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">View Gist</button><br>` +
+          //`<strong>Gist URL:</strong> <button onclick="window.open('${gistUrl}', '_blank')" style="padding: 4px 8px; background-color: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">View Gist</button><br>` +
+			 `<strong>Gist URL:</strong> <a href="${gistUrl}" target="_blank">View File</a><br>` +
           `<strong>Command Used By:</strong> <username>${user.id}</username>`);
         
         // Notify staff
