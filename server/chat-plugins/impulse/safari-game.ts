@@ -122,7 +122,7 @@ export class SafariGame {
         
         let row = ` <tr style="${activeStyle}">` +
          `   <td>${i + 1}</td>` +
-         `   <td>${p.user.name}${teamSuffix} ${isActive ? 'ðŸ'ˆ' : ''}</td>` +
+         `   <td>${p.user.name}${teamSuffix} ${isActive ? '': ''}</td>` +
           `  <td>${p.balls}</td>` +
           `  <td>${p.score}</td>`;
         
