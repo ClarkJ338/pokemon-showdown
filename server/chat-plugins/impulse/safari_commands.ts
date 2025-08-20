@@ -153,13 +153,9 @@ export const commands: ChatCommands = {
         `</div>` +
         `</div>`;
 
-      // Use uhtml for first time, uhtmlchange for updates
-      const existingStatus = room.log(entry => entry.includes(`safari-status-${room.id}`));
-      if (existingStatus) {
-        room.add(`|uhtmlchange|safari-status-${room.id}|${statusHTML}`).update();
-      } else {
-        room.add(`|uhtml|safari-status-${room.id}|${statusHTML}`).update();
-      }
+      // Always try uhtmlchange first, fall back to uhtml if needed
+      // This is safer than trying to detect existing elements
+      room.add(`|uhtmlchange|safari-status-${room.id}|${statusHTML}`).update();
     },
 
     leaderboard(target: string, room: Room, user: User) {
@@ -209,13 +205,9 @@ export const commands: ChatCommands = {
         `</div>` +
         `</div>`;
 
-      // Use uhtml for first time, uhtmlchange for updates
-      const existingLeaderboard = room.log.some(entry => entry.includes(`safari-leaderboard-${room.id}`));
-      if (existingLeaderboard) {
-        room.add(`|uhtmlchange|safari-leaderboard-${room.id}|${leaderboardHTML}`).update();
-      } else {
-        room.add(`|uhtml|safari-leaderboard-${room.id}|${leaderboardHTML}`).update();
-      }
+      // Always try uhtmlchange first, fall back to uhtml if needed
+      // This is safer than trying to detect existing elements
+      room.add(`|uhtmlchange|safari-leaderboard-${room.id}|${leaderboardHTML}`).update();
     },
 
     end(target: string, room: Room, user: User) {
