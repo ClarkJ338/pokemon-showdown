@@ -7,6 +7,7 @@
  * - Spectator mode
  * - Optional team or blitz modes
  * - Enhanced UI with |uhtml| and |uhtmlchange|
+ * Fixed: Proper game cleanup when games end naturally
  */
 
 import type {Room, User, ChatCommands} from '../../../server/types';
@@ -62,6 +63,12 @@ export const commands: ChatCommands = {
         duration,
         mode,
       );
+      
+      // FIXED: Set up cleanup callback
+      game.onGameEnd = () => {
+        safariGames.delete(room.id);
+      };
+      
       safariGames.set(room.id, game);
 
       // 6. Create the initial UI
@@ -182,8 +189,7 @@ export const commands: ChatCommands = {
         return this.errorReply("Only the host can end the game.");
       }
       
-      // Clean up
-      safariGames.delete(room.id);
+      // Clean up - the game.end() will call the cleanup callback
       game.end();
     },
 
@@ -194,7 +200,7 @@ export const commands: ChatCommands = {
       const game = safariGames.get(room.id);
       if (!game) return this.errorReply("No active Safari Zone.");
       
-      safariGames.delete(room.id);
+      // FIXED: Let game.end() handle cleanup via callback
       game.end();
       room.add(`|raw|<div style="background: #dc2626; color: white; padding: 8px; border-radius: 5px; text-align: center;">⚠️ Game force-ended by ${user.name}</div>`).update();
     },

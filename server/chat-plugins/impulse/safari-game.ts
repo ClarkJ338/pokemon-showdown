@@ -1,6 +1,7 @@
 /* server/chat-plugins/safari-game.ts
  *
  * Safari Game Class - Core game logic with uhtml UI updates
+ * Fixed: Game cleanup now properly removes from safariGames map
  */
 
 import {Dex} from '../../../sim/dex';
@@ -39,6 +40,19 @@ export class SafariGame {
   turnStartTime = 0;
   started = false;
   teamAssignments: Map<string, string> = new Map(); // user.id -> team name
+  // Add cleanup callback
+  onGameEnd?: () => void;
+  // Store recent catches for UI display
+  recentCatches: Array<{
+    playerName: string;
+    teamSuffix: string;
+    pokemonName: string;
+    bst: number;
+    ballsLeft: number;
+    isTimeout: boolean;
+    timestamp: number;
+  }> = [];
+  maxRecentCatches = 5; // Show last 5 catches
 
   constructor(
     room: Room, host: User,
@@ -69,14 +83,14 @@ export class SafariGame {
       .join('');
 
     let html = `<div style="border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">` +
-        `<h3 style="margin: 0 0 10px 0; color: #2563eb;">ðŸŒ¿ Safari Zone Lobby</h3>` +
-       ` <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">` +
-         ` <div>` +
+        `<h3 style="margin: 0 0 10px 0; color: #2563eb;">🌿 Safari Zone Lobby</h3>` +
+        `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">` +
+          `<div>` +
             `<strong>Game Settings:</strong>` +
-           ` <ul style="margin: 5px 0; padding-left: 20px;">` +
-           `   <li>Host: <strong>${this.host.name}</strong></li>` +
-           `   <li>Mode: <strong>${this.mode}</strong></li>` +
-           `   <li>Balls: <strong>${this.ballsPerPlayer}</strong></li>`;
+            `<ul style="margin: 5px 0; padding-left: 20px;">` +
+              `<li>Host: <strong>${this.host.name}</strong></li>` +
+              `<li>Mode: <strong>${this.mode}</strong></li>` +
+              `<li>Balls: <strong>${this.ballsPerPlayer}</strong></li>`;
     
     if (this.mode !== 'blitz') {
       html += `<li>Turn timeout: <strong>${this.turnTimeout / 1000}s</strong></li>` +
@@ -87,21 +101,21 @@ export class SafariGame {
     
     html += `</ul></div>` +
           `<div><strong>Players (${this.participants.size}):</strong>` +
-         `   <ul style="margin: 5px 0; padding-left: 20px; max-height: 100px; overflow-y: auto;">` +
-          `    ${playersList || '<li><em>No players yet</em></li>'}` +
-          `  </ul>`;
+            `<ul style="margin: 5px 0; padding-left: 20px; max-height: 100px; overflow-y: auto;">` +
+              `${playersList || '<li><em>No players yet</em></li>'}` +
+            `</ul>`;
     
     if (this.spectators.size > 0) {
       html += `<strong>Spectators (${this.spectators.size}):</strong>` +
-           ` <ul style="margin: 5px 0; padding-left: 20px; max-height: 60px; overflow-y: auto;">` +
-         `     ${spectatorsList}` +
-         `   </ul>`;
+            `<ul style="margin: 5px 0; padding-left: 20px; max-height: 60px; overflow-y: auto;">` +
+              `${spectatorsList}` +
+            `</ul>`;
     }
     
     html += `</div></div><div style="text-align: center;">` +
-        `  <button name="send" value="/safari join" style="background: #10b981; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Join Game</button>` +
-       `   <button name="send" value="/safari spectate" style="background: #6b7280; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Spectate</button>` +
-      `    <button name="send" value="/safari start" style="background: #dc2626; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Start Game</button>` +
+          `<button name="send" value="/safari join" style="background: #10b981; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Join Game</button>` +
+          `<button name="send" value="/safari spectate" style="background: #6b7280; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Spectate</button>` +
+          `<button name="send" value="/safari start" style="background: #dc2626; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Start Game</button>` +
         `</div></div>`;
 
     return html;
@@ -120,11 +134,11 @@ export class SafariGame {
         const isActive = this.mode !== 'blitz' && currentPlayer && p.user.id === currentPlayer.user.id;
         const activeStyle = isActive ? 'background: #fef3c7; font-weight: bold;' : '';
         
-        let row = ` <tr style="${activeStyle}">` +
-         `   <td>${i + 1}</td>` +
-         `   <td>${p.user.name}${teamSuffix} ${isActive ? '': ''}</td>` +
-          `  <td>${p.balls}</td>` +
-          `  <td>${p.score}</td>`;
+        let row = `<tr style="${activeStyle}">` +
+            `<td>${i + 1}</td>` +
+            `<td>${p.user.name}${teamSuffix} ${isActive ? '⭐' : ''}</td>` +
+            `<td>${p.balls}</td>` +
+            `<td>${p.score}</td>`;
         
         if (this.mode !== 'blitz') {
           row += `<td>${Math.ceil(p.timeBank / 1000)}s</td>`;
@@ -136,44 +150,63 @@ export class SafariGame {
       })
       .join('');
 
+    // Generate recent catches display
+    const recentCatchesHTML = this.recentCatches.length > 0 ? 
+      `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin: 10px 0;">` +
+        `<h4 style="margin: 0 0 8px 0; color: #475569; font-size: 14px;">📜 Recent Catches</h4>` +
+        `<div style="max-height: 120px; overflow-y: auto;">` +
+          this.recentCatches.slice().reverse().map(catch_ => {
+            const bgColor = catch_.isTimeout ? '#fef3c7' : '#d1fae5';
+            const textColor = catch_.isTimeout ? '#92400e' : '#065f46';
+            const icon = catch_.isTimeout ? '⏰' : '✨';
+            return `<div style="background: ${bgColor}; color: ${textColor}; padding: 4px 8px; margin: 2px 0; border-radius: 4px; font-size: 12px;">` +
+                   `<strong>${icon} ${catch_.playerName}${catch_.teamSuffix}</strong> caught <strong>${catch_.pokemonName}</strong> ` +
+                   `(BST ${catch_.bst}) • ${catch_.ballsLeft} balls left</div>`;
+          }).join('') +
+        `</div>` +
+      `</div>` : '';
+
     let html = `<div style="border: 2px solid #059669; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">` +
-        `<h3 style="margin: 0 0 15px 0; color: #059669;">ðŸŽ® Safari Zone Active - ${this.mode.toUpperCase()} Mode</h3>`;
+        `<h3 style="margin: 0 0 15px 0; color: #059669;">🎮 Safari Zone Active - ${this.mode.toUpperCase()} Mode</h3>`;
 
     if (this.mode !== 'blitz' && currentPlayer) {
       html += `<div style="background: #fbbf24; color: #92400e; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">` +
-          `<strong>ðŸŽ¯ ${currentPlayer.user.name}'s Turn!</strong> ` +
-       `   <span style="margin-left: 10px;">Time Bank: ${Math.ceil(currentPlayer.timeBank / 1000)}s | Balls: ${currentPlayer.balls}</span>` +
-        `  <div style="margin-top: 8px;">` +
-       `     <button name="send" value="/safari catch" style="background: #dc2626; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">ðŸŽ¯ Catch PokÃ©mon!</button>` +
-        `  </div> </div>`;
+          `<strong>🎯 ${currentPlayer.user.name}'s Turn!</strong> ` +
+          `<span style="margin-left: 10px;">Time Bank: ${Math.ceil(currentPlayer.timeBank / 1000)}s | Balls: ${currentPlayer.balls}</span>` +
+          `<div style="margin-top: 8px;">` +
+            `<button name="send" value="/safari catch" style="background: #dc2626; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">🎾 Catch Pokémon!</button>` +
+          `</div></div>`;
     }
 
     if (this.mode === 'blitz') {
       html += `<div style="background: #ef4444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">` +
-        `  <strong>âš¡ BLITZ MODE ACTIVE!</strong>` +
-      `    <div style="margin-top: 8px;">` +
-      `      <button name="send" value="/safari catch" style="background: #b91c1c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">âš¡ Quick Catch!</button>` +
-       `   </div> </div>`;
+          `<strong>⚡ BLITZ MODE ACTIVE!</strong>` +
+          `<div style="margin-top: 8px;">` +
+            `<button name="send" value="/safari catch" style="background: #b91c1c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Quick Catch!</button>` +
+          `</div></div>`;
     }
 
-    html += `  <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">` +
-        `  <thead>` +
-     `       <tr style="background: #f3f4f6;">` +
-    `          <th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th>` +
-        `      <th style="padding: 8px; border: 1px solid #d1d5db;">Player</th>` +
-         `     <th style="padding: 8px; border: 1px solid #d1d5db;">Balls</th>` +
-         `     <th style="padding: 8px; border: 1px solid #d1d5db;">Score</th>`;
+    // Add recent catches section
+    html += recentCatchesHTML;
+
+    html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">` +
+        `<thead>` +
+          `<tr style="background: #f3f4f6;">` +
+            `<th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th>` +
+            `<th style="padding: 8px; border: 1px solid #d1d5db;">Player</th>` +
+            `<th style="padding: 8px; border: 1px solid #d1d5db;">Balls</th>` +
+            `<th style="padding: 8px; border: 1px solid #d1d5db;">Score</th>`;
     
     if (this.mode !== 'blitz') {
       html += '<th style="padding: 8px; border: 1px solid #d1d5db;">Time Bank</th>';
     }
     
-    html += ` </tr> </thead><tbody> ${playersList}  </tbody></table>` +
-		 `<div style="text-align: center;">` +
-        `  <button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">My Status</button>` +
-      `    <button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">Leaderboard</button>` +
-      `    <button name="send" value="/safari end" style="background: #dc2626; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">End Game</button>` +
-    `    </div> </div>`;
+    html += `</tr></thead><tbody>${playersList}</tbody></table>` +
+        `<div style="text-align: center;">` +
+          `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">My Status</button>` +
+          `<button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">Leaderboard</button>` +
+          `<button name="send" value="/safari end" style="background: #dc2626; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">End Game</button>` +
+        `</div></div>`;
 
     return html;
   }
@@ -275,7 +308,7 @@ export class SafariGame {
 
     // Blitz mode: any time
     if (this.mode === 'blitz') {
-      this.processCatch(uid, this.autoEncounter());
+      this.processCatch(uid, this.autoEncounter(), false);
       this.updateUI();
       return;
     }
@@ -290,12 +323,12 @@ export class SafariGame {
     this.clearTimers();
     this.saveTimeBank();
 
-    this.processCatch(uid, this.randomEncounter());
+    this.processCatch(uid, this.randomEncounter(), false);
     this.stepTurn();
   }
 
   // Core catch logic
-  private processCatch(uid: string, speciesName: string) {
+  private processCatch(uid: string, speciesName: string, isTimeout: boolean = false) {
     const entry = this.participants.get(uid)!;
     // 1) Prevent underflow
     if (entry.balls <= 0) {
@@ -315,19 +348,28 @@ export class SafariGame {
       ? ` [${this.teamAssignments.get(uid)}]`
       : '';
 
-    // 4) Build the catch message
-    let catchMessage = `|raw|<div style="background: #10b981; color: white; padding: 8px; border-radius: 5px; margin: 5px 0;">`;
-    catchMessage += `<strong>âœ¨ ${entry.user.name}${teamSuffix}</strong> caught <strong>${species.name}</strong> `;
-    catchMessage += `(BST ${bst})! <em>${entry.balls} balls remaining</em></div>`;
-    
-    this.room.add(catchMessage);
+    // 4) Add to recent catches instead of room chat
+    this.recentCatches.push({
+      playerName: entry.user.name,
+      teamSuffix,
+      pokemonName: species.name,
+      bst,
+      ballsLeft: entry.balls,
+      isTimeout,
+      timestamp: Date.now()
+    });
 
-    // 5) Notify spectators
+    // Keep only the most recent catches
+    if (this.recentCatches.length > this.maxRecentCatches) {
+      this.recentCatches = this.recentCatches.slice(-this.maxRecentCatches);
+    }
+
+    // 5) Notify spectators via PM (they can't see the UI updates)
     for (const sid of this.spectators) {
       const spectator = this.room.server.getUser(sid);
       if (spectator) {
         let spectatorMessage = `|pm|&Safari Spectate|${spectator.name}|`;
-        spectatorMessage += `${entry.user.name} caught ${species.name}.`;
+        spectatorMessage += `${entry.user.name} caught ${species.name} (BST ${bst})${isTimeout ? ' [timeout]' : ''}.`;
         spectator.send(spectatorMessage);
       }
     }
@@ -344,13 +386,8 @@ export class SafariGame {
     if (entry.balls > 0) {
       // Auto-catch lowest-tier common
       const speciesName = this.autoEncounter();
-      this.processCatch(uid, speciesName);
+      this.processCatch(uid, speciesName, true); // Mark as timeout catch
     }
-    
-    let timeoutMessage = `|raw|<div style="background: #f59e0b; color: white; padding: 6px; border-radius: 4px; margin: 5px 0;">`;
-    timeoutMessage += `â° <strong>${entry.user.name}</strong> timed out and auto-caught!</div>`;
-    
-    this.room.add(timeoutMessage);
     
     this.stepTurn();
   }
@@ -382,7 +419,7 @@ export class SafariGame {
     // Warning 10s before per-turn timeout
     const warnTime = Math.max(0, this.turnTimeout - 10_000);
     this.warningTimer = setTimeout(() => {
-      entry.user.send(`|pm|&Safari Zone|${entry.user.name}|âš ï¸ 10s left to act!`);
+      entry.user.send(`|pm|&Safari Zone|${entry.user.name}|⚠️ 10s left to act!`);
     }, warnTime);
 
     // Main timeout
@@ -397,7 +434,7 @@ export class SafariGame {
     entry.timeBank = Math.max(0, entry.timeBank - used);
   }
 
-  // End or cancel
+  // End or cancel - FIXED: Now calls cleanup callback
   end() {
     this.clearTimers();
     if (this.started) {
@@ -412,7 +449,7 @@ export class SafariGame {
         });
 
       let resultsMessage = `|uhtml|safari-results-${this.room.id}|<div style="border: 2px solid #dc2626; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);">`;
-      resultsMessage += `<h3 style="margin: 0 0 15px 0; color: #dc2626;">ðŸ† Safari Zone Complete!</h3>`;
+      resultsMessage += `<h3 style="margin: 0 0 15px 0; color: #dc2626;">🏁 Safari Zone Complete!</h3>`;
       resultsMessage += `<table style="width: 100%; border-collapse: collapse;">`;
       resultsMessage += `<thead><tr style="background: #f3f4f6;"><th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th><th style="padding: 8px; border: 1px solid #d1d5db;">Player</th><th style="padding: 8px; border: 1px solid #d1d5db;">Final Score</th></tr></thead>`;
       resultsMessage += `<tbody>${standings.join('')}</tbody>`;
@@ -421,13 +458,18 @@ export class SafariGame {
       this.room.add(resultsMessage);
     } else {
       let cancelMessage = `|uhtml|safari-cancelled-${this.room.id}|<div style="background: #f59e0b; color: white; padding: 15px; border-radius: 10px; text-align: center;">`;
-      cancelMessage += `<h3 style="margin: 0;">ðŸš« Safari Zone Cancelled</h3></div>`;
+      cancelMessage += `<h3 style="margin: 0;">🚫 Safari Zone Cancelled</h3></div>`;
       
       this.room.add(cancelMessage);
     }
     
     // Clear the main UI
     this.room.add(`|uhtmlchange|safari-${this.room.id}|`).update();
+    
+    // FIXED: Call cleanup callback to remove from safariGames map
+    if (this.onGameEnd) {
+      this.onGameEnd();
+    }
   }
 
   // Initialize the game UI
