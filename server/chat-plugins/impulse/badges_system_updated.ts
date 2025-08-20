@@ -3,7 +3,7 @@
  * Custom badges system for displaying user badges
  */
 
-import { FS } from '../../lib';
+import { FS } from '../../../lib';
 
 interface Badge {
 	id: string;
@@ -23,53 +23,13 @@ export let BADGES_LIST: Badge[] = [
 	{
 		id: 'champion',
 		name: 'Tournament Champion',
-		imageUrl: '/sprites/badges/champion.png'
+		imageUrl: 'https://raw.githubusercontent.com/msikma/pokesprite/master/misc/ribbon/battle-memory-ribbon-gold.png'
 	},
 	{
 		id: 'veteran',
 		name: 'Veteran Player',
-		imageUrl: '/sprites/badges/veteran.png'
+		imageUrl: 'https://raw.githubusercontent.com/msikma/pokesprite/master/misc/ribbon/battle-royal-master-ribbon.png'
 	},
-	{
-		id: 'contributor',
-		name: 'Community Contributor',
-		imageUrl: '/sprites/badges/contributor.png'
-	},
-	{
-		id: 'moderator',
-		name: 'Moderator',
-		imageUrl: '/sprites/badges/moderator.png'
-	},
-	{
-		id: 'developer',
-		name: 'Developer',
-		imageUrl: '/sprites/badges/developer.png'
-	},
-	{
-		id: 'artist',
-		name: 'Community Artist',
-		imageUrl: '/sprites/badges/artist.png'
-	},
-	{
-		id: 'helper',
-		name: 'Community Helper',
-		imageUrl: '/sprites/badges/helper.png'
-	},
-	{
-		id: 'event_winner',
-		name: 'Event Winner',
-		imageUrl: '/sprites/badges/event_winner.png'
-	},
-	{
-		id: 'beta_tester',
-		name: 'Beta Tester',
-		imageUrl: '/sprites/badges/beta_tester.png'
-	},
-	{
-		id: 'special',
-		name: 'Special Recognition',
-		imageUrl: '/sprites/badges/special.png'
-	}
 ];
 
 // Helper function to get badge by ID
@@ -85,7 +45,7 @@ export function isValidBadgeId(badgeId: string): boolean {
 export let data: BadgeData;
 
 try {
-	data = JSON.parse(FS('config/chat-plugins/badges.json').readSync());
+	data = JSON.parse(FS('databases/badges.json').readSync());
 	// Ensure displaySettings exists for backwards compatibility
 	if (!data.displaySettings) {
 		data.displaySettings = {};
@@ -373,7 +333,7 @@ export function clearBadges(userid: string) {
 export function saveData() {
 	// Always sync the badges list to data before saving
 	data.badgesList = BADGES_LIST;
-	FS('config/chat-plugins/badges.json').writeUpdate(() => JSON.stringify(data));
+	FS('databases/badges.json').writeUpdate(() => JSON.stringify(data));
 }
 
 export const commands: Chat.ChatCommands = {
