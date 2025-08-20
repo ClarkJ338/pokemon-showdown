@@ -692,6 +692,11 @@ export class CommandContext extends MessageContext {
 // Impulse Exp
 		if (this.user.registered) Impulse.ExpSystem.addExp(this.user.id, 1);
 
+		// emote test 
+		if (this.user.registered && message.includes(':')) {
+			message = require('../server/chat-plugins/impulse/emotes').parseEmotes(message, this.user.id);
+	}
+
 		this.update();
 
 		return message;
