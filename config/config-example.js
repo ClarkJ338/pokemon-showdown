@@ -8,6 +8,14 @@
 exports.port = 8000;
 
 /**
+* Impulse Api Tokens & Keys
+* Such As githubToken & geminiKey
+*/
+exports.githubToken = '';
+
+exports.geminiKey = '';
+
+/**
  * The server address - the address at which Pokemon Showdown should be hosting
  *   This should be kept set to 0.0.0.0 unless you know what you're doing.
  *
