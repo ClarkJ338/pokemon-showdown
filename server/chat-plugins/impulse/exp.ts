@@ -495,7 +495,7 @@ export const commands: Chat.Commands = {
 
     ExpSystem.addExp(targetUser.id, amount, reason, user.id);
     
-    this.sendExpUpdateReply(user, targetUser, amount, 'gave', reason);
+    this.sendReply(user, targetUser, amount, 'gave', reason);
     this.logExpAction('GIVEEXP', targetUser, amount, user.id, reason);
     this.notifyUser(targetUser, user, amount, 'received', reason);
   },
@@ -516,7 +516,7 @@ export const commands: Chat.Commands = {
 
     ExpSystem.takeExp(targetUser.id, amount, reason, user.id);
     
-    this.sendExpUpdateReply(user, targetUser, amount, 'took', reason);
+    this.sendReply(user, targetUser, amount, 'took', reason);
     this.logExpAction('TAKEEXP', targetUser, amount, user.id, reason);
     this.notifyUser(targetUser, user, amount, 'taken', reason);
   },
