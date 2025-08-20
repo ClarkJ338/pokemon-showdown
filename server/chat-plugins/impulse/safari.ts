@@ -14,7 +14,7 @@ import type {Room, User, ChatCommands} from '../../../server/types';
 const DEFAULT_BALLS = 30;
 const DEFAULT_TIMEOUT = 30 * 1000; // 30s per turn
 const DEFAULT_TIMEBANK = 120 * 1000; // 120s total per player
-const DEFAULTBLITZDURATION = 120 * 1000; // 120s blitz
+const DEFAULT_BLITZ_DURATION = 120 * 1000; // 120s blitz
 
 interface Participant {
   user: User;
