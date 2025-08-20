@@ -12,7 +12,7 @@
 * Impulse.ExpSystem.addExp(this.user.id, 1); *
 *********************************************/
 
-import { FS } from '../../. /lib';
+import { FS } from '../../../lib';
 
 // Constants
 const EXP_FILE_PATH = 'databases/exp.json';
