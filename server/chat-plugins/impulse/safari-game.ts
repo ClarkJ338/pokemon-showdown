@@ -85,7 +85,7 @@ export class SafariGame {
       html += `<li>Blitz duration: <strong>${this.blitzDuration / 1000}s</strong></li>`;
     }
     
-    html += `</ul></div>`
+    html += `</ul></div>` +
           `<div><strong>Players (${this.participants.size}):</strong>` +
          `   <ul style="margin: 5px 0; padding-left: 20px; max-height: 100px; overflow-y: auto;">` +
           `    ${playersList || '<li><em>No players yet</em></li>'}` +
