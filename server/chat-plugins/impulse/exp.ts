@@ -508,6 +508,7 @@ export const commands: Chat.Commands = {
 			  `Reason: ${reason}<br>` +
 			  `You are now Level ${newLevel} (${newExp}/${expForNext} ${EXP_UNIT})`
 		  );
+	  }
   },
 
   takeexp(target, room, user) {
@@ -534,7 +535,8 @@ export const commands: Chat.Commands = {
         `Reason: ${reason}<br>` +
         `You are now Level ${newLevel} (${newExp}/${expForNext} ${EXP_UNIT})`
       );
-  },
+	 }
+  }
 
   resetexp(target, room, user) {
     this.checkCan('bypassall');
