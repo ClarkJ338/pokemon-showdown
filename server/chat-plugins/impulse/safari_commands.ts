@@ -154,7 +154,7 @@ export const commands: ChatCommands = {
         `</div>`;
 
       // Use uhtml for first time, uhtmlchange for updates
-      const existingStatus = room.log.some(entry => entry.includes(`safari-status-${room.id}`));
+      const existingStatus = room.log(entry => entry.includes(`safari-status-${room.id}`));
       if (existingStatus) {
         room.add(`|uhtmlchange|safari-status-${room.id}|${statusHTML}`).update();
       } else {
