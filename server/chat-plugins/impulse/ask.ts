@@ -14,7 +14,7 @@
  * Devloped by TurboRx
  */
 
-import {FS, Utils} from '../lib';
+import {FS, Utils} from '../../../lib';
 
 // Optional server-side config override (in config/config.js or config.ts)
 // Config.ask = { model: 'gemini-2.5-flash', cooldown: 20 /* seconds */, apiKey: '...' }
@@ -113,15 +113,4 @@ export const commands: Chat.ChatCommands = {
 		`/ask <prompt> - Ask the configured LLM (Gemini) a question. Uses GEMINI_API_KEY environment variable or Config.ask.apiKey. Rate-limited per-user (20s default).`,
 		`To configure: set environment variable GEMINI_API_KEY or put Config.ask = { apiKey: '...', model: 'gemini-2.5-flash', cooldown: 20 } in your server config.`,
 	],
-};
-
-export const pages: Chat.PageTable = {
-	asksettings: {
-		index() {
-			const model = Config?.ask?.model || DEFAULT_MODEL;
-			const cooldown = Number(Config?.ask?.cooldown) || DEFAULT_COOLDOWN_SECONDS;
-			const apiConfigured = !!(process.env.GEMINI_API_KEY || Config?.geminiKey);
-			return `<div class="pad"><h2>/ask plugin</h2><p>Model: ${Utils.escapeHTML(model)}<br />Cooldown: ${Utils.escapeHTML(String(cooldown))}s<br />API Key configured: ${apiConfigured ? 'yes' : 'no'}</p></div>`;
-		},
-	},
 };
