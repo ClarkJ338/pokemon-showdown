@@ -220,9 +220,6 @@ class SafariGame {
   }
 
   // 7) Log for staff audits
-  this.room.logAction(
-    `[Safari] ${entry.user.name} caught ${species.name} (BST ${bst}).`
-  );
   }
 
   // Skip/auto-catch on timeout
