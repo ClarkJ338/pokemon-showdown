@@ -5,7 +5,7 @@
  */
 
 import * as crypto from 'crypto';
-import { FS } from '../lib/fs';
+import { FS } from '../../../lib';
 
 interface RGB {
   R: number;
@@ -19,7 +19,7 @@ interface CustomColors {
 
 let customColors: CustomColors = {};
 try {
-  const customColorsData = FS('impulse-db/customcolors.json').readIfExistsSync();
+  const customColorsData = FS('databases/customcolors.json').readIfExistsSync();
   if (customColorsData) {
     customColors = JSON.parse(customColorsData);
   }
@@ -84,7 +84,7 @@ function HSLToRGB(H: number, S: number, L: number): RGB {
 }
 
 function updateColor(): void {
-  FS('impulse-db/customcolors.json').writeUpdate(() => JSON.stringify(customColors));
+  FS('databases/customcolors.json').writeUpdate(() => JSON.stringify(customColors));
   let newCss: string = '/* COLORS START */\n';
   for (const name in customColors) {
     newCss += generateCSS(name, customColors[name]);
