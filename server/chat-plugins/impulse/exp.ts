@@ -382,6 +382,11 @@ export class ExpSystem {
   }
 }
 
+function logExpAction(action: string, target: User, amount: number, byUserId: string, reason: string) {
+    const doubleExpText = ExpSystem.isDoubleExpActive ? ' (Double EXP)' : '';
+    this.modlog(action, target, `${amount} ${EXP_UNIT}${doubleExpText}`, { by: byUserId, reason });
+  }
+
 // Initialize the system
 Impulse.ExpSystem = ExpSystem;
 
@@ -497,7 +502,12 @@ export const commands: Chat.Commands = {
     
     this.sendReply(user, targetUser, amount, 'gave', reason);
     this.logExpAction('GIVEEXP', targetUser, amount, user.id, reason);
-    this.notifyUser(targetUser, user, amount, 'received', reason);
+	  if (targetUser.connected) {
+		  targetUser.popup(
+			  `|html|You received <b>${amount} ${EXP_UNIT}${DOUBLE_EXP ? ' (Double EXP)' : ''}</b> from <b>${Impulse.nameColor(user.name, true, true)}</b>.<br>` +
+			  `Reason: ${reason}<br>` +
+			  `You are now Level ${newLevel} (${newExp}/${expForNext} ${EXP_UNIT})`
+		  );
   },
 
   takeexp(target, room, user) {
@@ -518,40 +528,12 @@ export const commands: Chat.Commands = {
     
     this.sendReply(user, targetUser, amount, 'took', reason);
     this.logExpAction('TAKEEXP', targetUser, amount, user.id, reason);
-    this.notifyUser(targetUser, user, amount, 'taken', reason);
-  },
-
-  sendExpUpdateReply(actor: User, target: User, amount: number, action: string, reason: string) {
-    const newExp = ExpSystem.readExp(target.id);
-    const newLevel = ExpSystem.getLevel(newExp);
-    const expForNext = ExpSystem.getExpForNextLevel(newLevel + 1);
-    const doubleExpText = ExpSystem.isDoubleExpActive ? ' (Double EXP)' : '';
-    
-    this.sendReplyBox(
-      `${Impulse.nameColor(actor.name, true, true)} ${action} ${amount} ${EXP_UNIT}${doubleExpText} ${action === 'gave' ? 'to' : 'from'} ${Impulse.nameColor(target.name, true, true)} (${reason}). ` +
-      `New Level: ${newLevel} (${newExp}/${expForNext} ${EXP_UNIT})`
-    );
-  },
-
-  logExpAction(action: string, target: User, amount: number, byUserId: string, reason: string) {
-    const doubleExpText = ExpSystem.isDoubleExpActive ? ' (Double EXP)' : '';
-    this.modlog(action, target, `${amount} ${EXP_UNIT}${doubleExpText}`, { by: byUserId, reason });
-  },
-
-  notifyUser(target: User, actor: User, amount: number, action: string, reason: string) {
-    if (!target.connected) return;
-    
-    const newExp = ExpSystem.readExp(target.id);
-    const newLevel = ExpSystem.getLevel(newExp);
-    const expForNext = ExpSystem.getExpForNextLevel(newLevel + 1);
-    const doubleExpText = ExpSystem.isDoubleExpActive ? ' (Double EXP)' : '';
-    const actionText = action === 'received' ? 'from' : 'by';
-    
-    target.popup(
-      `|html|You ${action} <b>${amount} ${EXP_UNIT}${doubleExpText}</b> ${actionText} <b>${Impulse.nameColor(actor.name, true, true)}</b>.<br>` +
-      `Reason: ${reason}<br>` +
-      `You are now Level ${newLevel} (${newExp}/${expForNext} ${EXP_UNIT})`
-    );
+    if (targetUser.connected) {
+      targetUser.popup(
+        `|html|You received <b>${amount} ${EXP_UNIT}${DOUBLE_EXP ? ' (Double EXP)' : ''}</b> from <b>${Impulse.nameColor(user.name, true, true)}</b>.<br>` +
+        `Reason: ${reason}<br>` +
+        `You are now Level ${newLevel} (${newExp}/${expForNext} ${EXP_UNIT})`
+      );
   },
 
   resetexp(target, room, user) {
