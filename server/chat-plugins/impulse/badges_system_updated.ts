@@ -672,7 +672,7 @@ export const handlers: Chat.Handlers = {
 		
 		// Display up to 5 badges
 		for (const [i, badgeId] of badges.entries()) {
-			room.add(`|badge|${slot}|${badgeId}|custom|${i}`);
+			room.add(`|badge|${slot}|${badgeId}|${i}`);
 		}
 		
 		room.update();
