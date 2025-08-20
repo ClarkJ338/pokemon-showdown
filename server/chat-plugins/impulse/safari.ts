@@ -363,32 +363,6 @@ class SafariGame {
 export const commands: ChatCommands = {
   safari: {
     // /safari create [balls],[timeout],[mode],[duration]
-    create(target, room, user) {
-      if (!room) return this.errorReply(Use in a room.);
-      if (safariGames.has(room.id)) {
-        return this((x, y) => x + y, 0);
-        return ba - bb;
-      })
-      .map(s => s.name);
-    // Pick lowest 5 or full list
-    const pool = common.slice(0, Math.min(common.length, 5));
-    return this.randomItem(pool);
-  }
-
-  private clearTimers() {
-    if (this.timer) clearTimeout(this.timer);
-    if (this.warningTimer) clearTimeout(this.warningTimer);
-    this.timer = this.warningTimer = null;
-  }
-
-  private randomItem<T>(arr: readonly T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
-  }
-}
-
-export const commands: ChatCommands = {
-  safari: {
-    // /safari create [balls],[timeout],[mode],[duration]
 	  create(target: string, room: Room, user: User) {
   // 1. Ensure we’re in a room
   if (!room) return this.errorReply("Use this command in a room.");
