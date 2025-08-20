@@ -145,15 +145,13 @@ export const commands: ChatCommands = {
             : '';
           const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
           
-          return `
-            <tr style="${i < 3 ? 'background: #fef3c7;' : ''}">
-              <td style="text-align: center; font-size: 18px;">${medal}</td>
-              <td><strong>${p.user.name}</strong>${teamSuffix}</td>
-              <td style="text-align: center;">${p.balls}</td>
-              <td style="text-align: center; color: #dc2626; font-weight: bold;">${p.score}</td>
-              ${game.mode !== 'blitz' ? `<td style="text-align: center;">${Math.ceil(p.timeBank / 1000)}s</td>` : ''}
-            </tr>
-          `;
+          return `<tr style="${i < 3 ? 'background: #fef3c7;' : ''}">` +
+              `<td style="text-align: center; font-size: 18px;">${medal}</td>` +
+              `<td><strong>${p.user.name}</strong>${teamSuffix}</td>` +
+              `<td style="text-align: center;">${p.balls}</td>` +
+              `<td style="text-align: center; color: #dc2626; font-weight: bold;">${p.score}</td>` +
+              `${game.mode !== 'blitz' ? `<td style="text-align: center;">${Math.ceil(p.timeBank / 1000)}s</td>` : ''}` +
+            `</tr>`;
         })
         .join('');
 
