@@ -11,15 +11,15 @@
 * Impulse.ExpSystem.addExp(this.user.id, 1); *
 *********************************************/
 
-import { FS } from '../lib/fs';
+import { FS } from '../../../lib';
 
-const EXP_FILE_PATH = 'impulse-db/exp.json';
+const EXP_FILE_PATH = 'databases/exp.json';
 const DEFAULT_EXP = 0;
 const EXP_UNIT = `EXP`;
 Impulse.expUnit = EXP_UNIT;
 
-const MIN_LEVEL_EXP = 15;
-const MULTIPLIER = 1.4;
+const MIN_LEVEL_EXP = 10;
+const MULTIPLIER = 1.3;
 let DOUBLE_EXP = false;
 let DOUBLE_EXP_END_TIME: number | null = null;
 const EXP_COOLDOWN = 30000;
@@ -79,7 +79,7 @@ export class ExpSystem {
 
   private static loadExpConfig(): ExpConfig {
     try {
-      const rawData = FS('impulse-db/exp-config.json').readIfExistsSync();
+      const rawData = FS('databases/exp-config.json').readIfExistsSync();
       if (rawData) {
         const config = JSON.parse(rawData) as ExpConfig;
         // Restore double exp settings if they exist
@@ -100,7 +100,7 @@ export class ExpSystem {
         doubleExp: DOUBLE_EXP,
         doubleExpEndTime: DOUBLE_EXP_END_TIME
       };
-      FS('impulse-db/exp-config.json').writeUpdate(() => JSON.stringify(config, null, 2));
+      FS('databases/exp-config.json').writeUpdate(() => JSON.stringify(config, null, 2));
     } catch (error) {
       console.error(`Error saving EXP config: ${error}`);
     }
@@ -413,7 +413,7 @@ export const commands: Chat.Commands = {
   },
 
   giveexp(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     if (!target) return this.sendReply(`Usage: /giveexp [user], [amount], [reason]`);
     const parts = target.split(',').map(p => p.trim());
     if (parts.length < 2) return this.sendReply(`Usage: /giveexp [user], [amount], [reason]`);
@@ -450,7 +450,7 @@ export const commands: Chat.Commands = {
   },
 
   takeexp(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     if (!target) return this.sendReply(`Usage: /takeexp [user], [amount], [reason]`);
     const parts = target.split(',').map(p => p.trim());
     if (parts.length < 2) return this.sendReply(`Usage: /takeexp [user], [amount], [reason]`);
@@ -487,7 +487,7 @@ export const commands: Chat.Commands = {
   },
 
   resetexp(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     if (!target) return this.sendReply(`Usage: /resetexp [user], [reason]`);
     const parts = target.split(',').map(p => p.trim());
     const targetUser = Users.get(parts[0]);
@@ -512,7 +512,7 @@ export const commands: Chat.Commands = {
   },
 
   resetexpall(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     const reason = target.trim() || 'No reason specified.';
 
     ExpSystem.resetAllExp();
@@ -533,7 +533,7 @@ export const commands: Chat.Commands = {
   },
 
   toggledoubleexp(target, room, user) {
-    this.checkCan('globalban');
+    this.checkCan('bypassall');
     
     if (!target) {
       DOUBLE_EXP = !DOUBLE_EXP;
