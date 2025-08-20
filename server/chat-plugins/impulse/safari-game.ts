@@ -68,53 +68,41 @@ export class SafariGame {
       .filter(Boolean)
       .join('');
 
-    let html = `
-      <div style="border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">
-        <h3 style="margin: 0 0 10px 0; color: #2563eb;">ðŸŒ¿ Safari Zone Lobby</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
-          <div>
-            <strong>Game Settings:</strong>
-            <ul style="margin: 5px 0; padding-left: 20px;">
-              <li>Host: <strong>${this.host.name}</strong></li>
-              <li>Mode: <strong>${this.mode}</strong></li>
-              <li>Balls: <strong>${this.ballsPerPlayer}</strong></li>`;
+    let html = `<div style="border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">` +
+        `<h3 style="margin: 0 0 10px 0; color: #2563eb;">ðŸŒ¿ Safari Zone Lobby</h3>` +
+       ` <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">` +
+         ` <div>` +
+            `<strong>Game Settings:</strong>` +
+           ` <ul style="margin: 5px 0; padding-left: 20px;">` +
+           `   <li>Host: <strong>${this.host.name}</strong></li>` +
+           `   <li>Mode: <strong>${this.mode}</strong></li>` +
+           `   <li>Balls: <strong>${this.ballsPerPlayer}</strong></li>`;
     
     if (this.mode !== 'blitz') {
-      html += `
-                <li>Turn timeout: <strong>${this.turnTimeout / 1000}s</strong></li>
-                <li>Time bank: <strong>${this.timeBankDefault / 1000}s</strong></li>`;
+      html += `<li>Turn timeout: <strong>${this.turnTimeout / 1000}s</strong></li>` +
+                `<li>Time bank: <strong>${this.timeBankDefault / 1000}s</strong></li>`;
     } else {
-      html += `
-                <li>Blitz duration: <strong>${this.blitzDuration / 1000}s</strong></li>`;
+      html += `<li>Blitz duration: <strong>${this.blitzDuration / 1000}s</strong></li>`;
     }
     
-    html += `
-            </ul>
-          </div>
-          <div>
-            <strong>Players (${this.participants.size}):</strong>
-            <ul style="margin: 5px 0; padding-left: 20px; max-height: 100px; overflow-y: auto;">
-              ${playersList || '<li><em>No players yet</em></li>'}
-            </ul>`;
+    html += `</ul></div>`
+          `<div><strong>Players (${this.participants.size}):</strong>` +
+         `   <ul style="margin: 5px 0; padding-left: 20px; max-height: 100px; overflow-y: auto;">` +
+          `    ${playersList || '<li><em>No players yet</em></li>'}` +
+          `  </ul>`;
     
     if (this.spectators.size > 0) {
-      html += `
-            <strong>Spectators (${this.spectators.size}):</strong>
-            <ul style="margin: 5px 0; padding-left: 20px; max-height: 60px; overflow-y: auto;">
-              ${spectatorsList}
-            </ul>`;
+      html += `<strong>Spectators (${this.spectators.size}):</strong>` +
+           ` <ul style="margin: 5px 0; padding-left: 20px; max-height: 60px; overflow-y: auto;">` +
+         `     ${spectatorsList}` +
+         `   </ul>`;
     }
     
-    html += `
-          </div>
-        </div>
-        <div style="text-align: center;">
-          <button name="send" value="/safari join" style="background: #10b981; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Join Game</button>
-          <button name="send" value="/safari spectate" style="background: #6b7280; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Spectate</button>
-          <button name="send" value="/safari start" style="background: #dc2626; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Start Game</button>
-        </div>
-      </div>
-    `;
+    html += `</div></div><div style="text-align: center;">` +
+        `  <button name="send" value="/safari join" style="background: #10b981; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Join Game</button>` +
+       `   <button name="send" value="/safari spectate" style="background: #6b7280; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Spectate</button>` +
+      `    <button name="send" value="/safari start" style="background: #dc2626; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Start Game</button>` +
+        `</div></div>`;
 
     return html;
   }
@@ -132,79 +120,60 @@ export class SafariGame {
         const isActive = this.mode !== 'blitz' && currentPlayer && p.user.id === currentPlayer.user.id;
         const activeStyle = isActive ? 'background: #fef3c7; font-weight: bold;' : '';
         
-        let row = `
-          <tr style="${activeStyle}">
-            <td>${i + 1}</td>
-            <td>${p.user.name}${teamSuffix} ${isActive ? 'ðŸ'ˆ' : ''}</td>
-            <td>${p.balls}</td>
-            <td>${p.score}</td>`;
+        let row = ` <tr style="${activeStyle}">` +
+         `   <td>${i + 1}</td>` +
+         `   <td>${p.user.name}${teamSuffix} ${isActive ? 'ðŸ'ˆ' : ''}</td>` +
+          `  <td>${p.balls}</td>` +
+          `  <td>${p.score}</td>`;
         
         if (this.mode !== 'blitz') {
           row += `<td>${Math.ceil(p.timeBank / 1000)}s</td>`;
         }
         
-        row += `
-          </tr>
-        `;
+        row += `</tr>`;
         
         return row;
       })
       .join('');
 
-    let html = `
-      <div style="border: 2px solid #059669; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">
-        <h3 style="margin: 0 0 15px 0; color: #059669;">ðŸŽ® Safari Zone Active - ${this.mode.toUpperCase()} Mode</h3>
-        `;
+    let html = `<div style="border: 2px solid #059669; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">` +
+        `<h3 style="margin: 0 0 15px 0; color: #059669;">ðŸŽ® Safari Zone Active - ${this.mode.toUpperCase()} Mode</h3>`;
 
     if (this.mode !== 'blitz' && currentPlayer) {
-      html += `
-        <div style="background: #fbbf24; color: #92400e; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
-          <strong>ðŸŽ¯ ${currentPlayer.user.name}'s Turn!</strong> 
-          <span style="margin-left: 10px;">Time Bank: ${Math.ceil(currentPlayer.timeBank / 1000)}s | Balls: ${currentPlayer.balls}</span>
-          <div style="margin-top: 8px;">
-            <button name="send" value="/safari catch" style="background: #dc2626; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">ðŸŽ¯ Catch PokÃ©mon!</button>
-          </div>
-        </div>`;
+      html += `<div style="background: #fbbf24; color: #92400e; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">` +
+          `<strong>ðŸŽ¯ ${currentPlayer.user.name}'s Turn!</strong> ` +
+       `   <span style="margin-left: 10px;">Time Bank: ${Math.ceil(currentPlayer.timeBank / 1000)}s | Balls: ${currentPlayer.balls}</span>` +
+        `  <div style="margin-top: 8px;">` +
+       `     <button name="send" value="/safari catch" style="background: #dc2626; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">ðŸŽ¯ Catch PokÃ©mon!</button>` +
+        `  </div> </div>`;
     }
 
     if (this.mode === 'blitz') {
-      html += `
-        <div style="background: #ef4444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
-          <strong>âš¡ BLITZ MODE ACTIVE!</strong>
-          <div style="margin-top: 8px;">
-            <button name="send" value="/safari catch" style="background: #b91c1c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">âš¡ Quick Catch!</button>
-          </div>
-        </div>`;
+      html += `<div style="background: #ef4444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">` +
+        `  <strong>âš¡ BLITZ MODE ACTIVE!</strong>` +
+      `    <div style="margin-top: 8px;">` +
+      `      <button name="send" value="/safari catch" style="background: #b91c1c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">âš¡ Quick Catch!</button>` +
+       `   </div> </div>`;
     }
 
-    html += `
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-          <thead>
-            <tr style="background: #f3f4f6;">
-              <th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th>
-              <th style="padding: 8px; border: 1px solid #d1d5db;">Player</th>
-              <th style="padding: 8px; border: 1px solid #d1d5db;">Balls</th>
-              <th style="padding: 8px; border: 1px solid #d1d5db;">Score</th>`;
+    html += `  <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">` +
+        `  <thead>` +
+     `       <tr style="background: #f3f4f6;">` +
+    `          <th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th>` +
+        `      <th style="padding: 8px; border: 1px solid #d1d5db;">Player</th>` +
+         `     <th style="padding: 8px; border: 1px solid #d1d5db;">Balls</th>` +
+         `     <th style="padding: 8px; border: 1px solid #d1d5db;">Score</th>`;
     
     if (this.mode !== 'blitz') {
       html += '<th style="padding: 8px; border: 1px solid #d1d5db;">Time Bank</th>';
     }
     
-    html += `
-            </tr>
-          </thead>
-          <tbody>
-            ${playersList}
-          </tbody>
-        </table>
-
-        <div style="text-align: center;">
-          <button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">My Status</button>
-          <button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">Leaderboard</button>
-          <button name="send" value="/safari end" style="background: #dc2626; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">End Game</button>
-        </div>
-      </div>
-    `;
+    html += ` </tr> </thead><tbody> ${playersList}  </tbody></table>` +
+		 `<div style="text-align: center;">` +
+        `  <button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">My Status</button>` +
+      `    <button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">Leaderboard</button>` +
+      `    <button name="send" value="/safari end" style="background: #dc2626; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">End Game</button>` +
+    `    </div> </div>`;
 
     return html;
   }
