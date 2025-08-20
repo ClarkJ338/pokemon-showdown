@@ -6,6 +6,12 @@
 
 import * as https from 'https';
 
+// Import Config for accessing server configuration
+declare const Config: {
+    geminiKey?: string;
+    [key: string]: any;
+};
+
 // Type definitions for Pokemon Showdown
 interface User {
     userid: string;
@@ -440,7 +446,7 @@ function callGeminiAPI(question: string, context?: ConversationMessage[]): Promi
         const options: https.RequestOptions = {
             hostname: 'generativelanguage.googleapis.com',
             port: 443,
-            path: `/v1beta/models/${AI_CONFIG.GEMINI_MODEL}:generateContent?key=${AI_CONFIG.GEMINI_API_KEY}`,
+            path: `/v1beta/models/${AI_CONFIG.GEMINI_MODEL}:generateContent?key=${Config.geminiKey}`,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -647,7 +653,7 @@ export const commands: Record<string, Command> = {
             }
 
             // Check API key configuration
-            if (!AI_CONFIG.GEMINI_API_KEY || AI_CONFIG.GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+            if (!Config.geminiKey) {
                 return this.errorReply("AI service is not configured. Please contact an administrator.");
             }
 
@@ -752,7 +758,7 @@ export const commands: Record<string, Command> = {
             }
 
             // Check API key configuration
-            if (!AI_CONFIG.GEMINI_API_KEY || AI_CONFIG.GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+            if (!Config.geminiKey) {
                 return this.errorReply("AI service is not configured. Please contact an administrator.");
             }
 
