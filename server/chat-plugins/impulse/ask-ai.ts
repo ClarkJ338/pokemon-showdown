@@ -133,11 +133,11 @@ interface ContextConfig {
 // Configuration
 const AI_CONFIG: AIConfig = {
     GEMINI_API_KEY: 'YOUR_GEMINI_API_KEY_HERE', // Replace with your actual API key
-    GEMINI_MODEL: 'gemini-pro',
+    GEMINI_MODEL: 'gemini-2.5-flash',
     GEMINI_ENDPOINT: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
     COOLDOWN_TIME: 20 * 1000, // 20 seconds in milliseconds
-    MAX_QUESTION_LENGTH: 500,
-    MAX_RESPONSE_LENGTH: 1000,
+    MAX_QUESTION_LENGTH: 1000,
+    MAX_RESPONSE_LENGTH: 10000,
     ENABLE_CONTENT_FILTER: true,
     FILTER_ACTION: 'block', // 'block', 'warn', or 'log'
     STRIKE_SYSTEM_ENABLED: true,
