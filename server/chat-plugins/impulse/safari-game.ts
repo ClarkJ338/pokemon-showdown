@@ -305,18 +305,19 @@ export class SafariGame {
 		this.room.add(`|uhtml|safari-${this.room.id}|${stickyHtml}`).update();
 	}
 
-  // Show status for a specific user - called from command
-  showStatus(user: User) {
-    const p = this.participants.get(user.id);
-    if (!p) {
-      return user.sendTo(this.room.id, `|error|You're not playing.`);
-    }
-
-    this.showingStatus = true;
-    this.statusForUser = user.id;
-    this.showingLeaderboard = false; // Hide leaderboard if showing
-    this.updateUI();
-  }
+	// Show status for a specific user - called from command
+	showStatus(user: User) {
+		const p = this.participants.get(user.id);
+		if (!p) {
+			// Don't try to send error here, let the command handle it
+			return false;
+		}
+		this.showingStatus = true;
+		this.statusForUser = user.id;
+		this.showingLeaderboard = false; // Hide leaderboard if showing
+		this.updateUI();
+		return true;
+	}
 
   // Show leaderboard - called from command
   showLeaderboard() {
