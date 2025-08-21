@@ -81,12 +81,13 @@ export class SafariGame {
       .join('');
     
     const spectatorsList = [...this.spectators]
-      .map(uid => {
-        const user = this.room.server.getUser(uid);
-        return user ? `<li>${user.name}</li>` : '';
-      })
-      .filter(Boolean)
-      .join('');
+  .map(uid => {
+    // Get user from participants if they're a participant, otherwise skip
+    const participant = this.participants.get(uid);
+    return participant ? `<li>${participant.user.name}</li>` : '';
+  })
+  .filter(Boolean)
+  .join('');
 
     let html = `<div style="border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">` +
         `<h3 style="margin: 0 0 10px 0; color: #2563eb;">🌿 Safari Zone Lobby</h3>` +
