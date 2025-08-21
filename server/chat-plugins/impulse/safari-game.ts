@@ -128,177 +128,95 @@ export class SafariGame {
     return html;
   }
 
-  // Generate game status UI HTML
-  private getGameHTML(): string {
-    const currentPlayer = this.turnOrder.length > 0 ? 
-      this.participants.get(this.turnOrder[this.turnIndex]) : null;
-    
-    const playersList = [...this.participants.values()]
-      .sort((a, b) => b.score - a.score)
-      .map((p, i) => {
-        const teamSuffix = this.mode === 'team' ? 
-          ` <span style="color: #6b7280;">[${this.teamAssignments.get(p.user.id)}]</span>` : '';
-        const isActive = this.mode !== 'blitz' && currentPlayer && p.user.id === currentPlayer.user.id;
-        const activeStyle = isActive ? 'background: #fef3c7; font-weight: bold;' : '';
-        
-        let row = `<tr style="${activeStyle}">` +
-            `<td>${i + 1}</td>` +
-            `<td>${p.user.name}${teamSuffix} ${isActive ? '⭐' : ''}</td>` +
-            `<td>${p.balls}</td>` +
-            `<td>${p.score}</td>`;
-        
-        if (this.mode !== 'blitz') {
-          row += `<td>${Math.ceil(p.timeBank / 1000)}s</td>`;
-        }
-        
-        row += `</tr>`;
-        
-        return row;
-      })
-      .join('');
+	// Generate game status UI HTML
+private getGameHTML(): string {
+  const currentPlayer = this.turnOrder.length > 0 ? 
+    this.participants.get(this.turnOrder[this.turnIndex]) : null;
+  
+  const playersList = [...this.participants.values()]
+    .sort((a, b) => b.score - a.score)
+    .map((p, i) => {
+      const teamSuffix = this.mode === 'team' ? 
+        ` <span style="color: #6b7280;">[${this.teamAssignments.get(p.user.id)}]</span>` : '';
+      const isActive = this.mode !== 'blitz' && currentPlayer && p.user.id === currentPlayer.user.id;
+      const activeStyle = isActive ? 'background: #fef3c7; font-weight: bold;' : '';
+      
+      let row = `<tr style="${activeStyle}">` +
+          `<td>${i + 1}</td>` +
+          `<td>${p.user.name}${teamSuffix} ${isActive ? '⭐' : ''}</td>` +
+          `<td>${p.balls}</td>` +
+          `<td>${p.score}</td>`;
+      
+      if (this.mode !== 'blitz') {
+        row += `<td>${Math.ceil(p.timeBank / 1000)}s</td>`;
+      }
+      
+      row += `</tr>`;
+      
+      return row;
+    })
+    .join('');
 
-    // Generate recent catches display
-    const recentCatchesHTML = this.recentCatches.length > 0 ? 
-      `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin: 10px 0;">` +
-        `<h4 style="margin: 0 0 8px 0; color: #475569; font-size: 14px;">📜 Recent Catches</h4>` +
-        `<div style="max-height: 120px; overflow-y: auto;">` +
-          this.recentCatches.slice().reverse().map(catch_ => {
-            const bgColor = catch_.isTimeout ? '#fef3c7' : '#d1fae5';
-            const textColor = catch_.isTimeout ? '#92400e' : '#065f46';
-            const icon = catch_.isTimeout ? '⏰' : '✨';
-            return `<div style="background: ${bgColor}; color: ${textColor}; padding: 4px 8px; margin: 2px 0; border-radius: 4px; font-size: 12px;">` +
-                   `<strong>${icon} ${catch_.playerName}${catch_.teamSuffix}</strong> caught <strong>${catch_.pokemonName}</strong> ` +
-                   `(BST ${catch_.bst}) • ${catch_.ballsLeft} balls left</div>`;
-          }).join('') +
-        `</div>` +
-      `</div>` : '';
-
-    let html = `<div style="border: 2px solid #059669; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">` +
-        `<h3 style="margin: 0 0 15px 0; color: #059669;">🎮 Safari Zone Active - ${this.mode.toUpperCase()} Mode</h3>`;
-
-    if (this.mode !== 'blitz' && currentPlayer) {
-      html += `<div style="background: #fbbf24; color: #92400e; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">` +
-          `<strong>🎯 ${currentPlayer.user.name}'s Turn!</strong> ` +
-          `<span style="margin-left: 10px;">Time Bank: ${Math.ceil(currentPlayer.timeBank / 1000)}s | Balls: ${currentPlayer.balls}</span>` +
-          `<div style="margin-top: 8px;">` +
-            `<button name="send" value="/safari catch" style="background: #dc2626; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">🎾 Catch Pokémon!</button>` +
-          `</div></div>`;
-    }
-
-    if (this.mode === 'blitz') {
-      html += `<div style="background: #ef4444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">` +
-          `<strong>⚡ BLITZ MODE ACTIVE!</strong>` +
-          `<div style="margin-top: 8px;">` +
-            `<button name="send" value="/safari catch" style="background: #b91c1c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Quick Catch!</button>` +
-          `</div></div>`;
-    }
-
-    // Add recent catches section
-    html += recentCatchesHTML;
-
-    html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">` +
-        `<thead>` +
-          `<tr style="background: #f3f4f6;">` +
-            `<th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th>` +
-            `<th style="padding: 8px; border: 1px solid #d1d5db;">Player</th>` +
-            `<th style="padding: 8px; border: 1px solid #d1d5db;">Balls</th>` +
-            `<th style="padding: 8px; border: 1px solid #d1d5db;">Score</th>`;
-    
-    if (this.mode !== 'blitz') {
-      html += '<th style="padding: 8px; border: 1px solid #d1d5db;">Time Bank</th>';
-    }
-    
-    html += `</tr></thead><tbody>${playersList}</tbody></table>` +
-        `<div style="text-align: center;">` +
-          `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">My Status</button>` +
-          `<button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">Leaderboard</button>` +
-          `<button name="send" value="/safari end" style="background: #dc2626; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">End Game</button>` +
-        `</div></div>`;
-
-    // Add status section if showing
-	  /*if (this.showingStatus && this.statusForUser) {
-		  const user = this.participants.get(this.statusForUser)?.user; // Get user from participants instead
-		  const p = user ? this.participants.get(user.id) : null;
-		  if (user && p) {
-			  const statusHTML = 
-      `<div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 15px; border-radius: 10px; border: 2px solid #0284c7; margin-top: 10px;">` +
-      `<h4 style="margin: 0 0 10px 0; color: #0c4a6e;">🎯 ${user.name}'s Safari Status</h4>` +
-      `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">` +
-        `<div><strong>🎾 Poké Balls:</strong> ${p.balls}</div>` +
-        `<div><strong>🏆 Score:</strong> ${p.score} BST</div>` +
-        `<div><strong>⏱️ Time Bank:</strong> ${Math.ceil(p.timeBank / 1000)}s</div>` +
-        `<div><strong>🎮 Mode:</strong> ${this.mode}</div>` +
-				  `</div>` +
-				  `${this.mode === 'team' && this.teamAssignments.has(user.id) ? 
-					  `<div style="margin-top: 10px; text-align: center; color: #1e40af;"><strong>Team: ${this.teamAssignments.get(user.id)}</strong></div>` : ''
-      }` +
-      `<div style="text-align: center; margin-top: 10px;">` +
-        `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
-        `<button onclick="this.parentElement.parentElement.style.display='none'" style="background: #6b7280; color: white; border: none; padding: 6px 12px; margin-left: 5px; border-radius: 4px; cursor: pointer;">✖️ Close</button>` +
+  // Generate recent catches display
+  const recentCatchesHTML = this.recentCatches.length > 0 ? 
+    `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin: 10px 0;">` +
+      `<h4 style="margin: 0 0 8px 0; color: #475569; font-size: 14px;">📜 Recent Catches</h4>` +
+      `<div style="max-height: 120px; overflow-y: auto;">` +
+        this.recentCatches.slice().reverse().map(catch_ => {
+          const bgColor = catch_.isTimeout ? '#fef3c7' : '#d1fae5';
+          const textColor = catch_.isTimeout ? '#92400e' : '#065f46';
+          const icon = catch_.isTimeout ? '⏰' : '✨';
+          return `<div style="background: ${bgColor}; color: ${textColor}; padding: 4px 8px; margin: 2px 0; border-radius: 4px; font-size: 12px;">` +
+                 `<strong>${icon} ${catch_.playerName}${catch_.teamSuffix}</strong> caught <strong>${catch_.pokemonName}</strong> ` +
+                 `(BST ${catch_.bst}) • ${catch_.ballsLeft} balls left</div>`;
+        }).join('') +
       `</div>` +
-      `</div>`;
+    `</div>` : '';
 
-    html += statusHTML;
+  let html = `<div style="border: 2px solid #059669; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">` +
+      `<h3 style="margin: 0 0 15px 0; color: #059669;">🎮 Safari Zone Active - ${this.mode.toUpperCase()} Mode</h3>`;
+
+  if (this.mode !== 'blitz' && currentPlayer) {
+    html += `<div style="background: #fbbf24; color: #92400e; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">` +
+        `<strong>🎯 ${currentPlayer.user.name}'s Turn!</strong> ` +
+        `<span style="margin-left: 10px;">Time Bank: ${Math.ceil(currentPlayer.timeBank / 1000)}s | Balls: ${currentPlayer.balls}</span>` +
+        `<div style="margin-top: 8px;">` +
+          `<button name="send" value="/safari catch" style="background: #dc2626; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">🎾 Catch Pokémon!</button>` +
+        `</div></div>`;
   }
-}*/
-	  // Add status section if showing (only for the requesting user)
-if (this.showingStatus && this.statusForUser) {
-  // This will be handled separately via PM to the requesting user
-  // Don't include in main UI
+
+  if (this.mode === 'blitz') {
+    html += `<div style="background: #ef4444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">` +
+        `<strong>⚡ BLITZ MODE ACTIVE!</strong>` +
+        `<div style="margin-top: 8px;">` +
+          `<button name="send" value="/safari catch" style="background: #b91c1c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Quick Catch!</button>` +
+        `</div></div>`;
+  }
+
+  // Add recent catches section
+  html += recentCatchesHTML;
+
+  html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">` +
+      `<thead>` +
+        `<tr style="background: #f3f4f6;">` +
+          `<th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th>` +
+          `<th style="padding: 8px; border: 1px solid #d1d5db;">Player</th>` +
+          `<th style="padding: 8px; border: 1px solid #d1d5db;">Balls</th>` +
+          `<th style="padding: 8px; border: 1px solid #d1d5db;">Score</th>`;
+  
+  if (this.mode !== 'blitz') {
+    html += '<th style="padding: 8px; border: 1px solid #d1d5db;">Time Bank</th>';
+  }
+  
+  html += `</tr></thead><tbody>${playersList}</tbody></table>` +
+      `<div style="text-align: center;">` +
+        `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">My Status</button>` +
+        `<button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">Leaderboard</button>` +
+        `<button name="send" value="/safari end" style="background: #dc2626; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">End Game</button>` +
+      `</div></div>`;
+
+  return html;
 }
-
-// Add leaderboard section if showing (only for the requesting user)  
-if (this.showingLeaderboard && this.leaderboardForUser) {
-  // This will be handled separately via PM to the requesting user
-  // Don't include in main UI
-}
-
-    // Add leaderboard section if showing
-  /*  if (this.showingLeaderboard) {
-      const standings = [...this.participants.values()]
-        .sort((a, b) => b.score - a.score)
-        .map((p, i) => {
-          const teamSuffix = this.mode === 'team' && this.teamAssignments.has(p.user.id)
-            ? ` <span style="color: #6b7280;">[${this.teamAssignments.get(p.user.id)}]</span>`
-            : '';
-          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-          
-          return `<tr style="${i < 3 ? 'background: #fef3c7;' : ''}">` +
-              `<td style="text-align: center; font-size: 18px;">${medal}</td>` +
-              `<td><strong>${p.user.name}</strong>${teamSuffix}</td>` +
-              `<td style="text-align: center;">${p.balls}</td>` +
-              `<td style="text-align: center; color: #dc2626; font-weight: bold;">${p.score}</td>` +
-              `${this.mode !== 'blitz' ? `<td style="text-align: center;">${Math.ceil(p.timeBank / 1000)}s</td>` : ''}` +
-            `</tr>`;
-        })
-        .join('');
-
-      const leaderboardHTML = 
-        `<div style="background: linear-gradient(135deg, #fef7cd 0%, #fde68a 100%); padding: 15px; border-radius: 10px; border: 2px solid #d97706; margin-top: 10px;">` +
-        `<h3 style="margin: 0 0 15px 0; color: #92400e; text-align: center;">🏆 Safari Zone Leaderboard</h3>` +
-        `<table style="width: 100%; border-collapse: collapse;">` +
-          `<thead>` +
-            `<tr style="background: #f59e0b; color: white;">` +
-              `<th style="padding: 10px; border: 1px solid #d97706;">Rank</th>` +
-              `<th style="padding: 10px; border: 1px solid #d97706;">Player</th>` +
-              `<th style="padding: 10px; border: 1px solid #d97706;">Balls</th>` +
-              `<th style="padding: 10px; border: 1px solid #d97706;">Score (BST)</th>` +
-              `${this.mode !== 'blitz' ? `<th style="padding: 10px; border: 1px solid #d97706;">Time Bank</th>` : ''}` +
-            `</tr>` +
-          `</thead>` +
-          `<tbody>${standings}</tbody>` +
-        `</table>` +
-        `<div style="text-align: center; margin-top: 10px;">` +
-          `<button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
-          `<button onclick="this.parentElement.parentElement.style.display='none'" style="background: #6b7280; color: white; border: none; padding: 6px 12px; margin-left: 5px; border-radius: 4px; cursor: pointer;">✖️ Close</button>` +
-        `</div>` +
-        `</div>`;
-
-      html += leaderboardHTML;
-    }
-
-    return html;
-  }*/
 
   // Update the UI display
 	private updateUI() {
