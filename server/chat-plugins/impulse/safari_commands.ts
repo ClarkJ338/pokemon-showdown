@@ -184,7 +184,7 @@ export const commands: ChatCommands = {
 		  if (!this.canBroadcast()) return;
 		  this.sendReplyBox(
     '' +
-    '<div class="infobox-limited" style="text-align: center;">' +
+    '<div class="infobox-limited">' +
       '<h3>🌿 Safari Zone Commands</h3>' +
 
       '<h4>Game Management</h4>' +
