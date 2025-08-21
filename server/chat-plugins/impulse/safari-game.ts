@@ -290,16 +290,20 @@ export class SafariGame {
   }
 
   // Update the UI display
-  private updateUI() {
-    const html = this.started ? this.getGameHTML() : this.getLobbyHTML();
-    this.room.add(`|uhtmlchange|safari-${this.room.id}|${html}`).update();
-  }
-
-  // Initial UI creation
-  private createUI() {
-    const html = this.getLobbyHTML();
-    this.room.add(`|uhtml|safari-${this.room.id}|${html}`).update();
-  }
+	private updateUI() {
+		const html = this.started ? this.getGameHTML() : this.getLobbyHTML();
+		// Wrap in a sticky container that stays at bottom
+		const stickyHtml = `<div class="safari-sticky" style="position: sticky; bottom: 0; z-index: 1000; background: white; border-top: 2px solid #ddd;">${html}</div>`;
+		this.room.add(`|uhtmlchange|safari-${this.room.id}|${stickyHtml}`).update();
+	}
+	
+	// Initial UI creation
+	private createUI() {
+		const html = this.getLobbyHTML();
+		// Wrap in a sticky container that stays at bottom
+		const stickyHtml = `<div class="safari-sticky" style="position: sticky; bottom: 0; z-index: 1000; background: white; border-top: 2px solid #ddd;">${html}</div>`;
+		this.room.add(`|uhtml|safari-${this.room.id}|${stickyHtml}`).update();
+	}
 
   // Show status for a specific user - called from command
   showStatus(user: User) {
