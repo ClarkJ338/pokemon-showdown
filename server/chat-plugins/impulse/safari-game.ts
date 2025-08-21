@@ -422,6 +422,14 @@ showLeaderboard(user: User) {
     this.stepTurn();
   }
 
+	// Initial UI creation
+	private createUI() {
+		const html = this.getLobbyHTML();
+		// Wrap in a sticky container that stays at bottom
+		const stickyHtml = `<div class="safari-sticky" style="position: sticky; bottom: 0; z-index: 1000; background: white; border-top: 2px solid #ddd;">${html}</div>`;
+		this.room.add(`|uhtml|safari-${this.room.id}|${stickyHtml}`).update();
+	}
+
   // Core catch logic
   private processCatch(uid: string, speciesName: string, isTimeout: boolean = false) {
     const entry = this.participants.get(uid)!;
