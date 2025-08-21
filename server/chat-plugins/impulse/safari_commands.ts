@@ -1,15 +1,4 @@
-/* server/chat-plugins/safari.ts
- *
- * Advanced Safari Zone Commands:
- * - Turn-based with per-player time bank and timeout warnings
- * - Automated catch on timeout (low-BST common Pokémon)
- * - Wild encounters weighted by rarity tiers
- * - Spectator mode
- * - Optional team or blitz modes
- * - Enhanced UI with |uhtml| and |uhtmlchange|
- * Fixed: Proper game cleanup when games end naturally
- * Fixed: Status and leaderboard now integrated into main UI and display below game
- */
+/* server/chat-plugins/impulse/safari-game.ts */
 
 import type {Room, User, ChatCommands} from '../../../server/types';
 import {
@@ -190,89 +179,55 @@ export const commands: ChatCommands = {
         `</div>`
       );
     },
+	  
+	  help(target: string, room: Room, user: User) {
+		  if (!this.canBroadcast()) return;
+		  this.sendReplyBox(
+    '' +
+    '<div class="infobox-limited" style="text-align: center;">' +
+      '<h3>🌿 Safari Zone Commands</h3>' +
 
-    help(target: string, room: Room, user: User) {
-      this.sendReplyBox(
-        `<div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 20px; border-radius: 15px; border: 2px solid #0284c7;">` +
-        `<h3 style="margin: 0 0 15px 0; color: #0c4a6e; text-align: center;">🌿 Safari Zone Commands</h3>` +
-        
-        `<div style="margin-bottom: 20px;">` +
-          `<h4 style="color: #0369a1; margin: 0 0 8px 0;">🎯 Game Management</h4>` +
-          `<div style="background: white; padding: 10px; border-radius: 8px; border-left: 4px solid #0284c7;">` +
-            `<strong>/safari create [balls],[timeout],[mode],[duration]</strong><br />` +
-            `<em>Create a new Safari Zone game</em><br />` +
-            `<small>• balls: Poké Balls per player (default: ${DEFAULT_BALLS})<br />` +
-            `• timeout: Turn timeout in seconds (default: ${DEFAULT_TIMEOUT / 1000})<br />` +
-            `• mode: normal, team, or blitz (default: normal)<br />` +
-            `• duration: Blitz mode duration in seconds (default: ${DEFAULT_BLITZ_DURATION / 1000})</small>` +
-          `</div>` +
-        `</div>` +
+      '<h4>Game Management</h4>' +
+      '<ul>' +
+        '<li>' +
+          '<strong>/safari create [balls],[timeout],[mode],[duration]</strong><br />' +
+          'Create a new Safari Zone game.<br />' +
+          '• balls: Poké Balls per player (default: ' + DEFAULT_BALLS + ')<br />' +
+          '• timeout: Turn timeout in seconds (default: ' + (DEFAULT_TIMEOUT / 1000) + ')<br />' +
+          '• mode: normal, team, or blitz (default: normal)<br />' +
+          '• duration: Blitz mode duration in seconds (default: ' + (DEFAULT_BLITZ_DURATION / 1000) + ')' +
+        '</li>' +
+      '</ul>' +
 
-        `<div style="margin-bottom: 20px;">` +
-          `<h4 style="color: #0369a1; margin: 0 0 8px 0;">👥 Player Actions</h4>` +
-          `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">` +
-            `<div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid #10b981;">` +
-              `<strong>/safari join</strong><br />` +
-              `<small>Join the game</small>` +
-            `</div>` +
-            `<div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid #f59e0b;">` +
-              `<strong>/safari leave</strong><br />` +
-              `<small>Leave before start</small>` +
-            `</div>` +
-            `<div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid #6b7280;">` +
-              `<strong>/safari spectate</strong><br />` +
-              `<small>Watch without playing</small>` +
-            `</div>` +
-            `<div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid #dc2626;">` +
-              `<strong>/safari catch</strong><br />` +
-              `<small>Catch on your turn</small>` +
-            `</div>` +
-          `</div>` +
-        `</div>` +
+      '<h4>Player Actions</h4>' +
+      '<ul>' +
+        '<li><strong>/safari join</strong>: Join the game</li>' +
+        '<li><strong>/safari leave</strong>: Leave before start</li>' +
+        '<li><strong>/safari spectate</strong>: Watch without playing</li>' +
+        '<li><strong>/safari catch</strong>: Catch on your turn</li>' +
+      '</ul>' +
 
-        `<div style="margin-bottom: 20px;">` +
-          `<h4 style="color: #0369a1; margin: 0 0 8px 0;">📊 Information</h4>` +
-          `<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">` +
-            `<div style="background: white; padding: 6px; border-radius: 4px; text-align: center;">` +
-              `<strong>/safari status</strong><br />` +
-              `<small>Your stats</small>` +
-            `</div>` +
-            `<div style="background: white; padding: 6px; border-radius: 4px; text-align: center;">` +
-              `<strong>/safari leaderboard</strong><br />` +
-              `<small>Current rankings</small>` +
-            `</div>` +
-            `<div style="background: white; padding: 6px; border-radius: 4px; text-align: center;">` +
-              `<strong>/safari help</strong><br />` +
-              `<small>Show this help</small>` +
-            `</div>` +
-          `</div>` +
-        `</div>` +
+      '<h4>Information</h4>' +
+      '<ul>' +
+        '<li><strong>/safari status</strong>: Your stats</li>' +
+        '<li><strong>/safari leaderboard</strong>: Current rankings</li>' +
+        '<li><strong>/safari help</strong>: Show this help</li>' +
+      '</ul>' +
 
-        `<div style="margin-bottom: 15px;">` +
-          `<h4 style="color: #0369a1; margin: 0 0 8px 0;">🎮 Game Modes</h4>` +
-          `<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">` +
-            `<div style="background: #f0f9ff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">` +
-              `<strong>🎯 Normal</strong><br />` +
-              `<small>Turn-based gameplay with time banks</small>` +
-            `</div>` +
-            `<div style="background: #fef7cd; padding: 10px; border-radius: 6px; border: 1px solid #fed7aa;">` +
-              `<strong>👥 Team</strong><br />` +
-              `<small>Players split into competing teams</small>` +
-            `</div>` +
-            `<div style="background: #fef2f2; padding: 10px; border-radius: 6px; border: 1px solid #fecaca;">` +
-              `<strong>⚡ Blitz</strong><br />` +
-              `<small>Fast-paced, catch anytime!</small>` +
-            `</div>` +
-          `</div>` +
-        `</div>` +
+      '<h4>Game Modes</h4>' +
+      '<ul>' +
+        '<li><strong>Normal</strong>: Turn-based gameplay with time banks</li>' +
+        '<li><strong>Team</strong>: Players split into competing teams</li>' +
+        '<li><strong>Blitz</strong>: Fast-paced, catch anytime!</li>' +
+      '</ul>' +
 
-        `<div style="background: #e0f2fe; padding: 10px; border-radius: 8px; border: 1px solid #0284c7;">` +
-          `<h4 style="color: #0c4a6e; margin: 0 0 5px 0;">💡 How to Play</h4>` +
-          `<small>Catch Pokémon to earn points based on their Base Stat Total (BST). Higher BST = more points! ` +
-          `Manage your Poké Balls and time wisely. In team mode, work together for the highest combined score!</small>` +
-        `</div>` +
-        `</div>`
-      );
-    },
+      '<p>' +
+        '<strong>How to Play:</strong><br />' +
+        'Catch Pokémon to earn points based on their Base Stat Total (BST). Higher BST = more points! ' +
+        'Manage your Poké Balls and time wisely. In team mode, work together for the highest combined score.' +
+      '</p>' +
+    '</div>'
+  );
+	  }
   },
 };
