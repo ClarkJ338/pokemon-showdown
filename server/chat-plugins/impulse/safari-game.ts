@@ -216,7 +216,7 @@ export class SafariGame {
         `</div></div>`;
 
     // Add status section if showing
-	  if (this.showingStatus && this.statusForUser) {
+	  /*if (this.showingStatus && this.statusForUser) {
 		  const user = this.participants.get(this.statusForUser)?.user; // Get user from participants instead
 		  const p = user ? this.participants.get(user.id) : null;
 		  if (user && p) {
@@ -240,10 +240,21 @@ export class SafariGame {
 
     html += statusHTML;
   }
+}*/
+	  // Add status section if showing (only for the requesting user)
+if (this.showingStatus && this.statusForUser) {
+  // This will be handled separately via PM to the requesting user
+  // Don't include in main UI
+}
+
+// Add leaderboard section if showing (only for the requesting user)  
+if (this.showingLeaderboard && this.leaderboardForUser) {
+  // This will be handled separately via PM to the requesting user
+  // Don't include in main UI
 }
 
     // Add leaderboard section if showing
-    if (this.showingLeaderboard) {
+  /*  if (this.showingLeaderboard) {
       const standings = [...this.participants.values()]
         .sort((a, b) => b.score - a.score)
         .map((p, i) => {
@@ -287,7 +298,7 @@ export class SafariGame {
     }
 
     return html;
-  }
+  }*/
 
   // Update the UI display
 	private updateUI() {
@@ -306,26 +317,77 @@ export class SafariGame {
 	}
 
 	// Show status for a specific user - called from command
-	showStatus(user: User) {
-		const p = this.participants.get(user.id);
-		if (!p) {
-			// Don't try to send error here, let the command handle it
-			return false;
-		}
-		this.showingStatus = true;
-		this.statusForUser = user.id;
-		this.showingLeaderboard = false; // Hide leaderboard if showing
-		this.updateUI();
-		return true;
-	}
-
-  // Show leaderboard - called from command
-  showLeaderboard() {
-    this.showingLeaderboard = true;
-    this.showingStatus = false; // Hide status if showing
-    this.statusForUser = '';
-    this.updateUI();
+showStatus(user: User) {
+  const p = this.participants.get(user.id);
+  if (!p) {
+    return false;
   }
+
+  const statusHTML = 
+    `<div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 15px; border-radius: 10px; border: 2px solid #0284c7;">` +
+    `<h4 style="margin: 0 0 10px 0; color: #0c4a6e;">🎯 ${user.name}'s Safari Status</h4>` +
+    `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">` +
+      `<div><strong>🎾 Poké Balls:</strong> ${p.balls}</div>` +
+      `<div><strong>🏆 Score:</strong> ${p.score} BST</div>` +
+      `<div><strong>⏱️ Time Bank:</strong> ${Math.ceil(p.timeBank / 1000)}s</div>` +
+      `<div><strong>🎮 Mode:</strong> ${this.mode}</div>` +
+    `</div>` +
+    `${this.mode === 'team' && this.teamAssignments.has(user.id) ? 
+      `<div style="margin-top: 10px; text-align: center; color: #1e40af;"><strong>Team: ${this.teamAssignments.get(user.id)}</strong></div>` : ''
+    }` +
+    `<div style="text-align: center; margin-top: 10px;">` +
+      `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
+    `</div>` +
+    `</div>`;
+
+  // Send status only to the requesting user
+  user.sendTo(this.room.id, `|uhtml|safari-status-${user.id}|${statusHTML}`);
+  return true;
+}
+
+// Show leaderboard - called from command
+showLeaderboard(user: User) {
+  const standings = [...this.participants.values()]
+    .sort((a, b) => b.score - a.score)
+    .map((p, i) => {
+      const teamSuffix = this.mode === 'team' && this.teamAssignments.has(p.user.id)
+        ? ` <span style="color: #6b7280;">[${this.teamAssignments.get(p.user.id)}]</span>`
+        : '';
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+      
+      return `<tr style="${i < 3 ? 'background: #fef3c7;' : ''}">` +
+          `<td style="text-align: center; font-size: 18px;">${medal}</td>` +
+          `<td><strong>${p.user.name}</strong>${teamSuffix}</td>` +
+          `<td style="text-align: center;">${p.balls}</td>` +
+          `<td style="text-align: center; color: #dc2626; font-weight: bold;">${p.score}</td>` +
+          `${this.mode !== 'blitz' ? `<td style="text-align: center;">${Math.ceil(p.timeBank / 1000)}s</td>` : ''}` +
+        `</tr>`;
+    })
+    .join('');
+
+  const leaderboardHTML = 
+    `<div style="background: linear-gradient(135deg, #fef7cd 0%, #fde68a 100%); padding: 15px; border-radius: 10px; border: 2px solid #d97706;">` +
+    `<h3 style="margin: 0 0 15px 0; color: #92400e; text-align: center;">🏆 Safari Zone Leaderboard</h3>` +
+    `<table style="width: 100%; border-collapse: collapse;">` +
+      `<thead>` +
+        `<tr style="background: #f59e0b; color: white;">` +
+          `<th style="padding: 10px; border: 1px solid #d97706;">Rank</th>` +
+          `<th style="padding: 10px; border: 1px solid #d97706;">Player</th>` +
+          `<th style="padding: 10px; border: 1px solid #d97706;">Balls</th>` +
+          `<th style="padding: 10px; border: 1px solid #d97706;">Score (BST)</th>` +
+          `${this.mode !== 'blitz' ? `<th style="padding: 10px; border: 1px solid #d97706;">Time Bank</th>` : ''}` +
+        `</tr>` +
+      `</thead>` +
+      `<tbody>${standings}</tbody>` +
+    `</table>` +
+    `<div style="text-align: center; margin-top: 10px;">` +
+      `<button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
+    `</div>` +
+    `</div>`;
+
+  // Send leaderboard only to the requesting user
+  user.sendTo(this.room.id, `|uhtml|safari-leaderboard-${user.id}|${leaderboardHTML}`);
+}
 
   // Add a player
   join(user: User) {
