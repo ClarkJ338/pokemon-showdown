@@ -129,17 +129,16 @@ export const commands: ChatCommands = {
 			  return this.errorReply("You're not playing.");
 		  }
 	  },
-
-    leaderboard(target: string, room: Room, user: User) {
-      if (!room) return this.errorReply("Use in a room.");
-      const game = safariGames.get(room.id);
-      if (!game) {
-        return this.errorReply("No active Safari Zone.");
-      }
-
-      // Update the leaderboard section in the main UI instead of creating separate elements
-      game.showLeaderboard();
-    },
+	  
+	  leaderboard(target: string, room: Room, user: User) {
+		  if (!room) return this.errorReply("Use in a room.");
+		  const game = safariGames.get(room.id);
+		  if (!game) {
+			  return this.errorReply("No active Safari Zone.");
+		  }
+		  // Pass the user object so it only shows to them
+		  game.showLeaderboard(user);
+	  },
 
     end(target: string, room: Room, user: User) {
       if (!room) return this.errorReply("Use in a room.");
