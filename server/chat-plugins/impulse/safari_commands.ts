@@ -87,13 +87,6 @@ export const commands: ChatCommands = {
       game.leave(user);
     },
 
-    spectate(target: string, room: Room, user: User) {
-      if (!room) return this.errorReply("Use in a room.");
-      const game = safariGames.get(room.id);
-      if (!game) return this.errorReply("No active Safari Zone.");
-      game.spectate(user);
-    },
-
     start(target: string, room: Room, user: User) {
       if (!room) return this.errorReply("Use in a room.");
       const game = safariGames.get(room.id);
@@ -165,10 +158,9 @@ export const commands: ChatCommands = {
         .map(([roomId, game]) => {
           const roomName = game.room.title || roomId;
           const playerCount = game.participants.size;
-          const spectatorCount = game.spectators.size;
           const status = game.started ? 'Active' : 'Lobby';
           
-          return `• <strong>${roomName}</strong> (${roomId}): ${status} | ${playerCount} players, ${spectatorCount} spectators | Host: ${game.host.name} | Mode: ${game.mode}`;
+          return `• <strong>${roomName}</strong> (${roomId}): ${status} | ${playerCount} players | Host: ${game.host.name} | Mode: ${game.mode}`;
         })
         .join('<br />');
 
@@ -203,7 +195,6 @@ export const commands: ChatCommands = {
       '<ul>' +
         '<li><strong>/safari join</strong>: Join the game</li>' +
         '<li><strong>/safari leave</strong>: Leave before start</li>' +
-        '<li><strong>/safari spectate</strong>: Watch without playing</li>' +
         '<li><strong>/safari catch</strong>: Catch on your turn</li>' +
       '</ul>' +
 

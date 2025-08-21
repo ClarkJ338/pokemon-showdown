@@ -1,6 +1,7 @@
 /* server/chat-plugins/safari-game.ts
  *
  * Safari Game Class - Core game logic with integrated uhtml UI
+ * Fixed: Removed all spectate functionality
  * Fixed: Game cleanup now properly removes from safariGames map
  * Fixed: Status and leaderboard are now integrated into main UI and always display below
  */
@@ -33,7 +34,6 @@ export class SafariGame {
   blitzDuration: number;
   mode: Mode;
   participants = new Map<string, Participant>();
-  spectators = new Set<string>();
   turnOrder: string[] = [];
   turnIndex = 0;
   timer: NodeJS.Timeout | null = null;
@@ -53,7 +53,7 @@ export class SafariGame {
     isTimeout: boolean;
     timestamp: number;
   }> = [];
-  maxRecentCatches = 3; // Show last 5 catches
+  maxRecentCatches = 3; // Show last 3 catches
   
   // Track what sections are currently shown
   private showingStatus = false;
@@ -79,15 +79,6 @@ export class SafariGame {
     const playersList = [...this.participants.values()]
       .map(p => `<li>${p.user.name}</li>`)
       .join('');
-    
-    const spectatorsList = [...this.spectators]
-  .map(uid => {
-    // Get user from participants if they're a participant, otherwise skip
-    const participant = this.participants.get(uid);
-    return participant ? `<li>${participant.user.name}</li>` : '';
-  })
-  .filter(Boolean)
-  .join('');
 
     let html = `<div style="border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">` +
         `<h3 style="margin: 0 0 10px 0; color: #2563eb;">🌿 Safari Zone Lobby</h3>` +
@@ -110,18 +101,9 @@ export class SafariGame {
           `<div><strong>Players (${this.participants.size}):</strong>` +
             `<ul style="margin: 5px 0; padding-left: 20px; max-height: 100px; overflow-y: auto;">` +
               `${playersList || '<li><em>No players yet</em></li>'}` +
-            `</ul>`;
-    
-    if (this.spectators.size > 0) {
-      html += `<strong>Spectators (${this.spectators.size}):</strong>` +
-            `<ul style="margin: 5px 0; padding-left: 20px; max-height: 60px; overflow-y: auto;">` +
-              `${spectatorsList}` +
-            `</ul>`;
-    }
-    
-    html += `</div></div><div style="text-align: center;">` +
+            `</ul></div></div>` +
+        `<div style="text-align: center;">` +
           `<button name="send" value="/safari join" style="background: #10b981; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Join Game</button>` +
-          `<button name="send" value="/safari spectate" style="background: #6b7280; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Spectate</button>` +
           `<button name="send" value="/safari start" style="background: #dc2626; color: white; border: none; padding: 8px 16px; margin: 0 5px; border-radius: 5px; cursor: pointer;">Start Game</button>` +
         `</div></div>`;
 
@@ -340,16 +322,6 @@ showLeaderboard(user: User) {
     this.updateUI();
   }
 
-  // Allow spectators
-  spectate(user: User) {
-    if (this.participants.has(user.id)) {
-      return user.sendTo(this.room.id, `|error|Players cannot spectate.`);
-    }
-    this.spectators.add(user.id);
-    user.send(`|pm|&Safari Zone|${user.name}|You're now spectating. Enjoy!`);
-    this.updateUI();
-  }
-
   // Start game
   start(user: User) {
     if (user.id !== this.host.id) {
@@ -455,16 +427,6 @@ showLeaderboard(user: User) {
     // Keep only the most recent catches
     if (this.recentCatches.length > this.maxRecentCatches) {
       this.recentCatches = this.recentCatches.slice(-this.maxRecentCatches);
-    }
-
-    // 5) Notify spectators via PM (they can't see the UI updates)
-    for (const sid of this.spectators) {
-      const spectator = this.room.server.getUser(sid);
-      if (spectator) {
-        let spectatorMessage = `|pm|&Safari Spectate|${spectator.name}|`;
-        spectatorMessage += `${entry.user.name} caught ${species.name} (BST ${bst})${isTimeout ? ' [timeout]' : ''}.`;
-        spectator.send(spectatorMessage);
-      }
     }
   }
 
