@@ -1,14 +1,9 @@
 /* server/chat-plugins/safari.ts
  *
- * Advanced Safari Zone Commands:
- * - Turn-based with per-player time bank and timeout warnings
- * - Automated catch on timeout (low-BST common Pokémon)
- * - Wild encounters weighted by rarity tiers
- * - Spectator mode
- * - Optional team or blitz modes
- * - Enhanced UI with |uhtml| and |uhtmlchange|
- * Fixed: Proper game cleanup when games end naturally
- * Fixed: Status and leaderboard now integrated into main UI and display below game
+ * Safari Zone Commands with Chat.pages Integration:
+ * - Lobby remains in chatroom via uhtml
+ * - Game interface, status, and leaderboard use Chat.pages
+ * - Minimal game notifications in chatroom
  */
 
 import type {Room, User, ChatCommands} from '../../../server/types';
@@ -27,15 +22,13 @@ export const commands: ChatCommands = {
   safari: {
     // /safari create [balls],[timeout],[mode],[duration]
     create(target: string, room: Room, user: User) {
-      // 1. Ensure we're in a room
       if (!room) return this.errorReply("Use this command in a room.");
 
-      // 2. Prevent double-starts
       if (safariGames.has(room.id)) {
         return this.errorReply("A Safari Zone is already active.");
       }
 
-      // 3. Parse arguments
+      // Parse arguments
       const [bStr, tStr, modeStr, dStr] = target.split(',').map(s => s.trim());
       const balls = parseInt(bStr) || DEFAULT_BALLS;
       const timeout = parseInt(tStr) ? parseInt(tStr) * 1000 : DEFAULT_TIMEOUT;
@@ -47,14 +40,14 @@ export const commands: ChatCommands = {
           ? (parseInt(dStr) ? parseInt(dStr) * 1000 : DEFAULT_BLITZ_DURATION)
           : 0;
 
-      // 4. Validate values
+      // Validate values
       if (balls <= 0) return this.errorReply("Balls must be positive.");
       if (timeout < 5000) return this.errorReply("Timeout too short (minimum 5s).");
       if (mode === 'blitz' && duration < 10_000) {
         return this.errorReply("Blitz duration too short (minimum 10s).");
       }
 
-      // 5. Create and store the game
+      // Create and store the game
       const game = new SafariGame(
         room,
         user,
@@ -65,7 +58,7 @@ export const commands: ChatCommands = {
         mode,
       );
       
-      // FIXED: Set up cleanup callback
+      // Set up cleanup callback
       game.onGameEnd = () => {
         safariGames.delete(room.id);
         // Clear main UI when game ends
@@ -74,10 +67,10 @@ export const commands: ChatCommands = {
       
       safariGames.set(room.id, game);
 
-      // 6. Create the initial UI
+      // Create the initial UI (lobby in chatroom)
       game.create();
 
-      // 7. Announce creation
+      // Announce creation
       room.add(
         `|raw|<div style="background: #3b82f6; color: white; padding: 10px; border-radius: 8px; text-align: center; margin: 5px 0;">` +
         `🌟 <strong>${user.name}</strong> created a Safari Zone! Join the adventure above! 🌟</div>`
@@ -118,27 +111,30 @@ export const commands: ChatCommands = {
       if (!game) return this.errorReply("No active Safari Zone.");
       game.catch(user);
     },
-	  
-	  status(target: string, room: Room, user: User) {
-		  if (!room) return this.errorReply("Use in a room.");
-		  const game = safariGames.get(room.id);
-		  if (!game) {
-			  return this.errorReply("No active Safari Zone.");
-		  }
-		  if (!game.showStatus(user)) {
-			  return this.errorReply("You're not playing.");
-		  }
-	  },
-	  
-	  leaderboard(target: string, room: Room, user: User) {
-		  if (!room) return this.errorReply("Use in a room.");
-		  const game = safariGames.get(room.id);
-		  if (!game) {
-			  return this.errorReply("No active Safari Zone.");
-		  }
-		  // Pass the user object so it only shows to them
-		  game.showLeaderboard(user);
-	  },
+
+    // NEW: Open main game page using Chat.pages
+    game(target: string, room: Room, user: User) {
+      if (!room) return this.errorReply("Use in a room.");
+      const game = safariGames.get(room.id);
+      if (!game) return this.errorReply("No active Safari Zone.");
+      game.showGamePage(user);
+    },
+
+    // Status now uses Chat.pages
+    status(target: string, room: Room, user: User) {
+      if (!room) return this.errorReply("Use in a room.");
+      const game = safariGames.get(room.id);
+      if (!game) return this.errorReply("No active Safari Zone.");
+      game.showStatus(user);
+    },
+
+    // Leaderboard now uses Chat.pages
+    leaderboard(target: string, room: Room, user: User) {
+      if (!room) return this.errorReply("Use in a room.");
+      const game = safariGames.get(room.id);
+      if (!game) return this.errorReply("No active Safari Zone.");
+      game.showLeaderboard(user);
+    },
 
     end(target: string, room: Room, user: User) {
       if (!room) return this.errorReply("Use in a room.");
@@ -159,7 +155,6 @@ export const commands: ChatCommands = {
       const game = safariGames.get(room.id);
       if (!game) return this.errorReply("No active Safari Zone.");
       
-      // FIXED: Let game.end() handle cleanup via callback
       game.end();
       room.add(`|raw|<div style="background: #dc2626; color: white; padding: 8px; border-radius: 5px; text-align: center;">⚠️ Game force-ended by ${user.name}</div>`).update();
     },
@@ -231,15 +226,29 @@ export const commands: ChatCommands = {
         `</div>` +
 
         `<div style="margin-bottom: 20px;">` +
+          `<h4 style="color: #0369a1; margin: 0 0 8px 0;">📱 Game Interface</h4>` +
+          `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">` +
+            `<div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid #059669;">` +
+              `<strong>/safari game</strong><br />` +
+              `<small>Open main game page</small>` +
+            `</div>` +
+            `<div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid #3b82f6;">` +
+              `<strong>/safari status</strong><br />` +
+              `<small>View your status page</small>` +
+            `</div>` +
+          `</div>` +
+        `</div>` +
+
+        `<div style="margin-bottom: 20px;">` +
           `<h4 style="color: #0369a1; margin: 0 0 8px 0;">📊 Information</h4>` +
           `<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">` +
             `<div style="background: white; padding: 6px; border-radius: 4px; text-align: center;">` +
-              `<strong>/safari status</strong><br />` +
-              `<small>Your stats</small>` +
+              `<strong>/safari leaderboard</strong><br />` +
+              `<small>Rankings page</small>` +
             `</div>` +
             `<div style="background: white; padding: 6px; border-radius: 4px; text-align: center;">` +
-              `<strong>/safari leaderboard</strong><br />` +
-              `<small>Current rankings</small>` +
+              `<strong>/safari end</strong><br />` +
+              `<small>End game (host only)</small>` +
             `</div>` +
             `<div style="background: white; padding: 6px; border-radius: 4px; text-align: center;">` +
               `<strong>/safari help</strong><br />` +
@@ -266,10 +275,15 @@ export const commands: ChatCommands = {
           `</div>` +
         `</div>` +
 
-        `<div style="background: #e0f2fe; padding: 10px; border-radius: 8px; border: 1px solid #0284c7;">` +
-          `<h4 style="color: #0c4a6e; margin: 0 0 5px 0;">💡 How to Play</h4>` +
-          `<small>Catch Pokémon to earn points based on their Base Stat Total (BST). Higher BST = more points! ` +
-          `Manage your Poké Balls and time wisely. In team mode, work together for the highest combined score!</small>` +
+        `<div style="background: #e0f2fe; padding: 15px; border-radius: 8px; border: 1px solid #0284c7;">` +
+          `<h4 style="color: #0c4a6e; margin: 0 0 8px 0;">💡 How to Play</h4>` +
+          `<div style="margin-bottom: 10px;">` +
+            `<strong>📱 Interface:</strong> The lobby appears in chat, but once the game starts, use <strong>/safari game</strong> to open the dedicated game page for the best experience!` +
+          `</div>` +
+          `<div>` +
+            `<strong>🎯 Objective:</strong> Catch Pokémon to earn points based on their Base Stat Total (BST). Higher BST = more points! ` +
+            `Manage your Poké Balls and time wisely. In team mode, work together for the highest combined score!` +
+          `</div>` +
         `</div>` +
         `</div>`
       );
