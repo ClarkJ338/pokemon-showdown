@@ -523,45 +523,54 @@ showLeaderboard(user: User) {
     entry.timeBank = Math.max(0, entry.timeBank - used);
   }
 
-  // End or cancel - FIXED: Now calls cleanup callback and clears all UIs
-  end() {
-    this.clearTimers();
-    if (this.started) {
-      // Compute standings
-      const standings = [...this.participants.values()]
-        .sort((a, b) => b.score - a.score)
-        .map((p, i) => {
-          const teamSuffix = this.mode === 'team'
-            ? ` [${this.teamAssignments.get(p.user.id)}]`
-            : '';
-          return `<tr><td>${i + 1}</td><td>${p.user.name}${teamSuffix}</td><td>${p.score}</td></tr>`;
-        });
-
-      let resultsMessage = `|uhtml|safari-results-${this.room.id}|<div style="border: 2px solid #dc2626; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);">`;
-      resultsMessage += `<h3 style="margin: 0 0 15px 0; color: #dc2626;">🏁 Safari Zone Complete!</h3>`;
-      resultsMessage += `<table style="width: 100%; border-collapse: collapse;">`;
-      resultsMessage += `<thead><tr style="background: #f3f4f6;"><th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th><th style="padding: 8px; border: 1px solid #d1d5db;">Player</th><th style="padding: 8px; border: 1px solid #d1d5db;">Final Score</th></tr></thead>`;
-      resultsMessage += `<tbody>${standings.join('')}</tbody>`;
-      resultsMessage += `</table></div>`;
-
-      this.room.add(resultsMessage);
-    } else {
-      let cancelMessage = `|uhtml|safari-cancelled-${this.room.id}|<div style="background: #f59e0b; color: white; padding: 15px; border-radius: 10px; text-align: center;">`;
-      cancelMessage += `<h3 style="margin: 0;">🚫 Safari Zone Cancelled</h3></div>`;
-      
-      this.room.add(cancelMessage);
-    }
-    
-    // Clear the main UI
-    this.room.add(`|uhtmlchange|safari-${this.room.id}|`);
-    
-    this.room.update();
-    
-    // FIXED: Call cleanup callback to remove from safariGames map
-    if (this.onGameEnd) {
-      this.onGameEnd();
-    }
+	// End or cancel - FIXED: Now calls cleanup callback and clears all UIs
+end() {
+  this.clearTimers();
+  
+  // Clear individual user status and leaderboard UIs before ending
+  for (const [uid, participant] of this.participants) {
+    const user = participant.user;
+    // Clear individual status and leaderboard elements
+    user.sendTo(this.room.id, `|uhtmlchange|safari-status-${user.id}|`);
+    user.sendTo(this.room.id, `|uhtmlchange|safari-leaderboard-${user.id}|`);
   }
+  
+  if (this.started) {
+    // Compute standings
+    const standings = [...this.participants.values()]
+      .sort((a, b) => b.score - a.score)
+      .map((p, i) => {
+        const teamSuffix = this.mode === 'team'
+          ? ` [${this.teamAssignments.get(p.user.id)}]`
+          : '';
+        return `<tr><td>${i + 1}</td><td>${p.user.name}${teamSuffix}</td><td>${p.score}</td></tr>`;
+      });
+
+    let resultsMessage = `|uhtml|safari-results-${this.room.id}|<div style="border: 2px solid #dc2626; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);">`;
+    resultsMessage += `<h3 style="margin: 0 0 15px 0; color: #dc2626;">🏁 Safari Zone Complete!</h3>`;
+    resultsMessage += `<table style="width: 100%; border-collapse: collapse;">`;
+    resultsMessage += `<thead><tr style="background: #f3f4f6;"><th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th><th style="padding: 8px; border: 1px solid #d1d5db;">Player</th><th style="padding: 8px; border: 1px solid #d1d5db;">Final Score</th></tr></thead>`;
+    resultsMessage += `<tbody>${standings.join('')}</tbody>`;
+    resultsMessage += `</table></div>`;
+
+    this.room.add(resultsMessage);
+  } else {
+    let cancelMessage = `|uhtml|safari-cancelled-${this.room.id}|<div style="background: #f59e0b; color: white; padding: 15px; border-radius: 10px; text-align: center;">`;
+    cancelMessage += `<h3 style="margin: 0;">🚫 Safari Zone Cancelled</h3></div>`;
+    
+    this.room.add(cancelMessage);
+  }
+  
+  // Clear the main UI
+  this.room.add(`|uhtmlchange|safari-${this.room.id}|`);
+  
+  this.room.update();
+  
+  // FIXED: Call cleanup callback to remove from safariGames map
+  if (this.onGameEnd) {
+    this.onGameEnd();
+  }
+}
 
   // Initialize the game UI
   create() {
