@@ -118,22 +118,17 @@ export const commands: ChatCommands = {
       if (!game) return this.errorReply("No active Safari Zone.");
       game.catch(user);
     },
-
-    status(target: string, room: Room, user: User) {
-      if (!room) return this.errorReply("Use in a room.");
-      const game = safariGames.get(room.id);
-      if (!game) {
-        return this.errorReply("No active Safari Zone.");
-      }
-      
-      const p = game.participants.get(user.id);
-      if (!p) {
-        return this.errorReply("You're not playing.");
-      }
-
-      // Update the status section in the main UI instead of creating separate elements
-      game.showStatus(user);
-    },
+	  
+	  status(target: string, room: Room, user: User) {
+		  if (!room) return this.errorReply("Use in a room.");
+		  const game = safariGames.get(room.id);
+		  if (!game) {
+			  return this.errorReply("No active Safari Zone.");
+		  }
+		  if (!game.showStatus(user)) {
+			  return this.errorReply("You're not playing.");
+		  }
+	  },
 
     leaderboard(target: string, room: Room, user: User) {
       if (!room) return this.errorReply("Use in a room.");
