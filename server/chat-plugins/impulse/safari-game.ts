@@ -206,19 +206,49 @@ private getGameHTML(): string {
 
   // Update the UI display
 	private updateUI() {
-		const html = this.started ? this.getGameHTML() : this.getLobbyHTML();
-		// Wrap in a sticky container that stays at bottom
-		const stickyHtml = `<div class="safari-sticky" style="position: sticky; bottom: 0; z-index: 1000; background: white; border-top: 2px solid #ddd;">${html}</div>`;
-		this.room.add(`|uhtmlchange|safari-${this.room.id}|${stickyHtml}`).update();
+		if (this.started) {
+			// Show game UI only to participants
+			const gameHTML = this.getGameHTML();
+			const stickyGameHtml = `<div class="safari-sticky" style="position: sticky; bottom: 0; z-index: 1000; background: white; border-top: 2px solid #ddd;">${gameHTML}</div>`;
+			
+			// Send game UI to each participant
+			for (const [uid, participant] of this.participants) {
+				participant.user.sendTo(this.room.id, `|uhtmlchange|safari-${this.room.id}|${stickyGameHtml}`);
+			}
+			
+			// Show inactive game display for non-participants
+			const inactiveHTML = this.getInactiveGameHTML();
+			const stickyInactiveHtml = `<div class="safari-sticky" style="position: sticky; bottom: 0; z-index: 1000; background: white; border-top: 2px solid #ddd;">${inactiveHTML}</div>`;
+			
+			// Send to all users in room who aren't participants
+			for (const user of this.room.users.values()) {
+				if (!this.participants.has(user.id)) {
+					user.sendTo(this.room.id, `|uhtmlchange|safari-${this.room.id}|${stickyInactiveHtml}`);
+				}
+			}
+		} else {
+			// Show lobby to everyone
+			const html = this.getLobbyHTML();
+			const stickyHtml = `<div class="safari-sticky" style="position: sticky; bottom: 0; z-index: 1000; background: white; border-top: 2px solid #ddd;">${html}</div>`;
+			this.room.add(`|uhtmlchange|safari-${this.room.id}|${stickyHtml}`).update();
+		}
 	}
 	
-	// Initial UI creation
-	private createUI() {
-		const html = this.getLobbyHTML();
-		// Wrap in a sticky container that stays at bottom
-		const stickyHtml = `<div class="safari-sticky" style="position: sticky; bottom: 0; z-index: 1000; background: white; border-top: 2px solid #ddd;">${html}</div>`;
-		this.room.add(`|uhtml|safari-${this.room.id}|${stickyHtml}`).update();
-	}
+  // Generate inactive game display for non-participants
+  private getInactiveGameHTML(): string {
+    const playerCount = this.participants.size;
+    const topPlayer = [...this.participants.values()]
+      .sort((a, b) => b.score - a.score)[0];
+    
+    return `<div style="border: 2px solid #6b7280; border-radius: 10px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); opacity: 0.8;">` +
+      `<h3 style="margin: 0 0 10px 0; color: #6b7280;">🎮 Safari Zone In Progress</h3>` +
+      `<div style="text-align: center; color: #6b7280;">` +
+        `<p style="margin: 5px 0;">Mode: <strong>${this.mode.toUpperCase()}</strong> | Players: <strong>${playerCount}</strong></p>` +
+        `${topPlayer ? `<p style="margin: 5px 0;">Current Leader: <strong>${topPlayer.user.name}</strong> (${topPlayer.score} BST)</p>` : ''}` +
+        `<p style="margin: 5px 0; font-style: italic;">Game is active - only participants can see the action!</p>` +
+      `</div>` +
+    `</div>`;
+  }
 
 	// Show status for a specific user - called from command
 showStatus(user: User) {
@@ -519,6 +549,7 @@ end() {
     resultsMessage += `<tbody>${standings.join('')}</tbody>`;
     resultsMessage += `</table></div>`;
 
+    // Show results to everyone in the room
     this.room.add(resultsMessage);
   } else {
     let cancelMessage = `|uhtml|safari-cancelled-${this.room.id}|<div style="background: #f59e0b; color: white; padding: 15px; border-radius: 10px; text-align: center;">`;
@@ -527,7 +558,7 @@ end() {
     this.room.add(cancelMessage);
   }
   
-  // Clear the main UI
+  // Clear the main UI for everyone
   this.room.add(`|uhtmlchange|safari-${this.room.id}|`);
   
   this.room.update();
