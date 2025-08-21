@@ -8,7 +8,7 @@
  * - Optional team or blitz modes
  * - Enhanced UI with |uhtml| and |uhtmlchange|
  * Fixed: Proper game cleanup when games end naturally
- * Fixed: Status and leaderboard now use proper UI management and clear on game end
+ * Fixed: Status and leaderboard now integrated into main UI and display below game
  */
 
 import type {Room, User, ChatCommands} from '../../../server/types';
@@ -68,9 +68,8 @@ export const commands: ChatCommands = {
       // FIXED: Set up cleanup callback
       game.onGameEnd = () => {
         safariGames.delete(room.id);
-        // Clear all UI elements when game ends
-        room.add(`|uhtmlchange|safari-status-${room.id}|`);
-        room.add(`|uhtmlchange|safari-leaderboard-${room.id}|`);
+        // Clear main UI when game ends
+        room.add(`|uhtmlchange|safari-${room.id}|`);
       };
       
       safariGames.set(room.id, game);
@@ -124,90 +123,27 @@ export const commands: ChatCommands = {
       if (!room) return this.errorReply("Use in a room.");
       const game = safariGames.get(room.id);
       if (!game) {
-        // Clear status UI if no game exists
-        room.add(`|uhtmlchange|safari-status-${room.id}|`).update();
         return this.errorReply("No active Safari Zone.");
       }
       
       const p = game.participants.get(user.id);
       if (!p) {
-        // Clear status UI if user not in game
-        room.add(`|uhtmlchange|safari-status-${room.id}|`).update();
         return this.errorReply("You're not playing.");
       }
 
-      const statusHTML = 
-        `<div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 15px; border-radius: 10px; border: 2px solid #0284c7;">` +
-        `<h4 style="margin: 0 0 10px 0; color: #0c4a6e;">🎯 ${user.name}'s Safari Status</h4>` +
-        `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">` +
-          `<div><strong>🎾 Poké Balls:</strong> ${p.balls}</div>` +
-          `<div><strong>🏆 Score:</strong> ${p.score} BST</div>` +
-          `<div><strong>⏱️ Time Bank:</strong> ${Math.ceil(p.timeBank / 1000)}s</div>` +
-          `<div><strong>🎮 Mode:</strong> ${game.mode}</div>` +
-        `</div>` +
-        `${game.mode === 'team' && game.teamAssignments.has(user.id) ? 
-          `<div style="margin-top: 10px; text-align: center; color: #1e40af;"><strong>Team: ${game.teamAssignments.get(user.id)}</strong></div>` : ''
-        }` +
-        `<div style="text-align: center; margin-top: 10px;">` +
-          `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
-        `</div>` +
-        `</div>`;
-
-      // Always try uhtmlchange first, fall back to uhtml if needed
-      // This is safer than trying to detect existing elements
-      room.add(`|uhtmlchange|safari-status-${room.id}|${statusHTML}`).update();
+      // Update the status section in the main UI instead of creating separate elements
+      game.showStatus(user);
     },
 
     leaderboard(target: string, room: Room, user: User) {
       if (!room) return this.errorReply("Use in a room.");
       const game = safariGames.get(room.id);
       if (!game) {
-        // Clear leaderboard UI if no game exists
-        room.add(`|uhtmlchange|safari-leaderboard-${room.id}|`).update();
         return this.errorReply("No active Safari Zone.");
       }
 
-      const standings = [...game.participants.values()]
-        .sort((a, b) => b.score - a.score)
-        .map((p, i) => {
-          const teamSuffix = game.mode === 'team' && game.teamAssignments.has(p.user.id)
-            ? ` <span style="color: #6b7280;">[${game.teamAssignments.get(p.user.id)}]</span>`
-            : '';
-          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-          
-          return `<tr style="${i < 3 ? 'background: #fef3c7;' : ''}">` +
-              `<td style="text-align: center; font-size: 18px;">${medal}</td>` +
-              `<td><strong>${p.user.name}</strong>${teamSuffix}</td>` +
-              `<td style="text-align: center;">${p.balls}</td>` +
-              `<td style="text-align: center; color: #dc2626; font-weight: bold;">${p.score}</td>` +
-              `${game.mode !== 'blitz' ? `<td style="text-align: center;">${Math.ceil(p.timeBank / 1000)}s</td>` : ''}` +
-            `</tr>`;
-        })
-        .join('');
-
-      const leaderboardHTML = 
-        `<div style="background: linear-gradient(135deg, #fef7cd 0%, #fde68a 100%); padding: 15px; border-radius: 10px; border: 2px solid #d97706;">` +
-        `<h3 style="margin: 0 0 15px 0; color: #92400e; text-align: center;">🏆 Safari Zone Leaderboard</h3>` +
-        `<table style="width: 100%; border-collapse: collapse;">` +
-          `<thead>` +
-            `<tr style="background: #f59e0b; color: white;">` +
-              `<th style="padding: 10px; border: 1px solid #d97706;">Rank</th>` +
-              `<th style="padding: 10px; border: 1px solid #d97706;">Player</th>` +
-              `<th style="padding: 10px; border: 1px solid #d97706;">Balls</th>` +
-              `<th style="padding: 10px; border: 1px solid #d97706;">Score (BST)</th>` +
-              `${game.mode !== 'blitz' ? `<th style="padding: 10px; border: 1px solid #d97706;">Time Bank</th>` : ''}` +
-            `</tr>` +
-          `</thead>` +
-          `<tbody>${standings}</tbody>` +
-        `</table>` +
-        `<div style="text-align: center; margin-top: 10px;">` +
-          `<button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
-        `</div>` +
-        `</div>`;
-
-      // Always try uhtmlchange first, fall back to uhtml if needed
-      // This is safer than trying to detect existing elements
-      room.add(`|uhtmlchange|safari-leaderboard-${room.id}|${leaderboardHTML}`).update();
+      // Update the leaderboard section in the main UI instead of creating separate elements
+      game.showLeaderboard();
     },
 
     end(target: string, room: Room, user: User) {

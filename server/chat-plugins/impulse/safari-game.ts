@@ -1,8 +1,8 @@
 /* server/chat-plugins/safari-game.ts
  *
- * Safari Game Class - Core game logic with uhtml UI updates
+ * Safari Game Class - Core game logic with integrated uhtml UI
  * Fixed: Game cleanup now properly removes from safariGames map
- * Fixed: Better UI state management and cleanup for status/leaderboard
+ * Fixed: Status and leaderboard are now integrated into main UI and always display below
  */
 
 import {Dex} from '../../../sim/dex';
@@ -54,6 +54,11 @@ export class SafariGame {
     timestamp: number;
   }> = [];
   maxRecentCatches = 5; // Show last 5 catches
+  
+  // Track what sections are currently shown
+  private showingStatus = false;
+  private showingLeaderboard = false;
+  private statusForUser: string = ''; // Track which user's status is being shown
 
   constructor(
     room: Room, host: User,
@@ -209,6 +214,78 @@ export class SafariGame {
           `<button name="send" value="/safari end" style="background: #dc2626; color: white; border: none; padding: 6px 12px; margin: 0 3px; border-radius: 4px; cursor: pointer;">End Game</button>` +
         `</div></div>`;
 
+    // Add status section if showing
+    if (this.showingStatus && this.statusForUser) {
+      const user = this.room.server.getUser(this.statusForUser);
+      const p = user ? this.participants.get(user.id) : null;
+      
+      if (user && p) {
+        const statusHTML = 
+          `<div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 15px; border-radius: 10px; border: 2px solid #0284c7; margin-top: 10px;">` +
+          `<h4 style="margin: 0 0 10px 0; color: #0c4a6e;">🎯 ${user.name}'s Safari Status</h4>` +
+          `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">` +
+            `<div><strong>🎾 Poké Balls:</strong> ${p.balls}</div>` +
+            `<div><strong>🏆 Score:</strong> ${p.score} BST</div>` +
+            `<div><strong>⏱️ Time Bank:</strong> ${Math.ceil(p.timeBank / 1000)}s</div>` +
+            `<div><strong>🎮 Mode:</strong> ${this.mode}</div>` +
+          `</div>` +
+          `${this.mode === 'team' && this.teamAssignments.has(user.id) ? 
+            `<div style="margin-top: 10px; text-align: center; color: #1e40af;"><strong>Team: ${this.teamAssignments.get(user.id)}</strong></div>` : ''
+          }` +
+          `<div style="text-align: center; margin-top: 10px;">` +
+            `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
+            `<button onclick="this.parentElement.parentElement.style.display='none'" style="background: #6b7280; color: white; border: none; padding: 6px 12px; margin-left: 5px; border-radius: 4px; cursor: pointer;">✖️ Close</button>` +
+          `</div>` +
+          `</div>`;
+
+        html += statusHTML;
+      }
+    }
+
+    // Add leaderboard section if showing
+    if (this.showingLeaderboard) {
+      const standings = [...this.participants.values()]
+        .sort((a, b) => b.score - a.score)
+        .map((p, i) => {
+          const teamSuffix = this.mode === 'team' && this.teamAssignments.has(p.user.id)
+            ? ` <span style="color: #6b7280;">[${this.teamAssignments.get(p.user.id)}]</span>`
+            : '';
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+          
+          return `<tr style="${i < 3 ? 'background: #fef3c7;' : ''}">` +
+              `<td style="text-align: center; font-size: 18px;">${medal}</td>` +
+              `<td><strong>${p.user.name}</strong>${teamSuffix}</td>` +
+              `<td style="text-align: center;">${p.balls}</td>` +
+              `<td style="text-align: center; color: #dc2626; font-weight: bold;">${p.score}</td>` +
+              `${this.mode !== 'blitz' ? `<td style="text-align: center;">${Math.ceil(p.timeBank / 1000)}s</td>` : ''}` +
+            `</tr>`;
+        })
+        .join('');
+
+      const leaderboardHTML = 
+        `<div style="background: linear-gradient(135deg, #fef7cd 0%, #fde68a 100%); padding: 15px; border-radius: 10px; border: 2px solid #d97706; margin-top: 10px;">` +
+        `<h3 style="margin: 0 0 15px 0; color: #92400e; text-align: center;">🏆 Safari Zone Leaderboard</h3>` +
+        `<table style="width: 100%; border-collapse: collapse;">` +
+          `<thead>` +
+            `<tr style="background: #f59e0b; color: white;">` +
+              `<th style="padding: 10px; border: 1px solid #d97706;">Rank</th>` +
+              `<th style="padding: 10px; border: 1px solid #d97706;">Player</th>` +
+              `<th style="padding: 10px; border: 1px solid #d97706;">Balls</th>` +
+              `<th style="padding: 10px; border: 1px solid #d97706;">Score (BST)</th>` +
+              `${this.mode !== 'blitz' ? `<th style="padding: 10px; border: 1px solid #d97706;">Time Bank</th>` : ''}` +
+            `</tr>` +
+          `</thead>` +
+          `<tbody>${standings}</tbody>` +
+        `</table>` +
+        `<div style="text-align: center; margin-top: 10px;">` +
+          `<button name="send" value="/safari leaderboard" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
+          `<button onclick="this.parentElement.parentElement.style.display='none'" style="background: #6b7280; color: white; border: none; padding: 6px 12px; margin-left: 5px; border-radius: 4px; cursor: pointer;">✖️ Close</button>` +
+        `</div>` +
+        `</div>`;
+
+      html += leaderboardHTML;
+    }
+
     return html;
   }
 
@@ -216,15 +293,33 @@ export class SafariGame {
   private updateUI() {
     const html = this.started ? this.getGameHTML() : this.getLobbyHTML();
     this.room.add(`|uhtmlchange|safari-${this.room.id}|${html}`).update();
-    
-    // Note: We don't auto-refresh status/leaderboard here to avoid spam
-    // Users can use the refresh buttons or re-run the commands manually
   }
 
   // Initial UI creation
   private createUI() {
     const html = this.getLobbyHTML();
     this.room.add(`|uhtml|safari-${this.room.id}|${html}`).update();
+  }
+
+  // Show status for a specific user - called from command
+  showStatus(user: User) {
+    const p = this.participants.get(user.id);
+    if (!p) {
+      return user.sendTo(this.room.id, `|error|You're not playing.`);
+    }
+
+    this.showingStatus = true;
+    this.statusForUser = user.id;
+    this.showingLeaderboard = false; // Hide leaderboard if showing
+    this.updateUI();
+  }
+
+  // Show leaderboard - called from command
+  showLeaderboard() {
+    this.showingLeaderboard = true;
+    this.showingStatus = false; // Hide status if showing
+    this.statusForUser = '';
+    this.updateUI();
   }
 
   // Add a player
@@ -278,6 +373,11 @@ export class SafariGame {
       return user.sendTo(this.room.id, `|error|No players joined.`);
     }
     this.started = true;
+
+    // Reset UI state when starting
+    this.showingStatus = false;
+    this.showingLeaderboard = false;
+    this.statusForUser = '';
 
     // For team mode, assign two teams
     if (this.mode === 'team') {
@@ -470,14 +570,9 @@ export class SafariGame {
     // Clear the main UI
     this.room.add(`|uhtmlchange|safari-${this.room.id}|`);
     
-    // Clear status and leaderboard UIs - this will be handled by the onGameEnd callback in commands
-    // The callback will call: 
-    // room.add(`|uhtmlchange|safari-status-${room.id}|`);
-    // room.add(`|uhtmlchange|safari-leaderboard-${room.id}|`);
-    
     this.room.update();
     
-    // FIXED: Call cleanup callback to remove from safariGames map and clear UIs
+    // FIXED: Call cleanup callback to remove from safariGames map
     if (this.onGameEnd) {
       this.onGameEnd();
     }
