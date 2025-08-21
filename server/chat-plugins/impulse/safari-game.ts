@@ -53,7 +53,7 @@ export class SafariGame {
     isTimeout: boolean;
     timestamp: number;
   }> = [];
-  maxRecentCatches = 5; // Show last 5 catches
+  maxRecentCatches = 3; // Show last 5 catches
   
   // Track what sections are currently shown
   private showingStatus = false;
@@ -132,30 +132,34 @@ export class SafariGame {
 private getGameHTML(): string {
   const currentPlayer = this.turnOrder.length > 0 ? 
     this.participants.get(this.turnOrder[this.turnIndex]) : null;
-  
-  const playersList = [...this.participants.values()]
-    .sort((a, b) => b.score - a.score)
-    .map((p, i) => {
-      const teamSuffix = this.mode === 'team' ? 
-        ` <span style="color: #6b7280;">[${this.teamAssignments.get(p.user.id)}]</span>` : '';
-      const isActive = this.mode !== 'blitz' && currentPlayer && p.user.id === currentPlayer.user.id;
-      const activeStyle = isActive ? 'background: #fef3c7; font-weight: bold;' : '';
-      
-      let row = `<tr style="${activeStyle}">` +
-          `<td>${i + 1}</td>` +
-          `<td>${p.user.name}${teamSuffix} ${isActive ? '⭐' : ''}</td>` +
-          `<td>${p.balls}</td>` +
-          `<td>${p.score}</td>`;
-      
-      if (this.mode !== 'blitz') {
-        row += `<td>${Math.ceil(p.timeBank / 1000)}s</td>`;
-      }
-      
-      row += `</tr>`;
-      
-      return row;
-    })
-    .join('');
+
+	const playersList = [...this.participants.values()]
+  .sort((a, b) => b.score - a.score)
+  .slice(0, 3) // Only show top 3 players
+  .map((p, i) => {
+    const teamSuffix = this.mode === 'team' ? 
+      ` <span style="color: #6b7280;">[${this.teamAssignments.get(p.user.id)}]</span>` : '';
+    const isActive = this.mode !== 'blitz' && currentPlayer && p.user.id === currentPlayer.user.id;
+    const activeStyle = isActive ? 'background: #fef3c7; font-weight: bold;' : '';
+    
+    // Show medal for top 3
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+    
+    let row = `<tr style="${activeStyle}">` +
+        `<td style="text-align: center; font-size: 18px;">${medal}</td>` +
+        `<td>${p.user.name}${teamSuffix} ${isActive ? '⭐' : ''}</td>` +
+        `<td>${p.balls}</td>` +
+        `<td>${p.score}</td>`;
+    
+    if (this.mode !== 'blitz') {
+      row += `<td>${Math.ceil(p.timeBank / 1000)}s</td>`;
+    }
+    
+    row += `</tr>`;
+    
+    return row;
+  })
+  .join('');
 
   // Generate recent catches display
   const recentCatchesHTML = this.recentCatches.length > 0 ? 
@@ -197,13 +201,13 @@ private getGameHTML(): string {
   html += recentCatchesHTML;
 
   html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">` +
-      `<thead>` +
-        `<tr style="background: #f3f4f6;">` +
-          `<th style="padding: 8px; border: 1px solid #d1d5db;">Rank</th>` +
-          `<th style="padding: 8px; border: 1px solid #d1d5db;">Player</th>` +
-          `<th style="padding: 8px; border: 1px solid #d1d5db;">Balls</th>` +
-          `<th style="padding: 8px; border: 1px solid #d1d5db;">Score</th>`;
-  
+    `<thead>` +
+      `<tr style="background: #f3f4f6;">` +
+        `<th style="padding: 8px; border: 1px solid #d1d5db;">Top 3</th>` +
+        `<th style="padding: 8px; border: 1px solid #d1d5db;">Player</th>` +
+        `<th style="padding: 8px; border: 1px solid #d1d5db;">Balls</th>` +
+        `<th style="padding: 8px; border: 1px solid #d1d5db;">Score</th>`;
+	
   if (this.mode !== 'blitz') {
     html += '<th style="padding: 8px; border: 1px solid #d1d5db;">Time Bank</th>';
   }
