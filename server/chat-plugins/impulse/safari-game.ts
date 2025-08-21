@@ -215,32 +215,31 @@ export class SafariGame {
         `</div></div>`;
 
     // Add status section if showing
-    if (this.showingStatus && this.statusForUser) {
-      const user = this.room.server.getUser(this.statusForUser);
-      const p = user ? this.participants.get(user.id) : null;
-      
-      if (user && p) {
-        const statusHTML = 
-          `<div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 15px; border-radius: 10px; border: 2px solid #0284c7; margin-top: 10px;">` +
-          `<h4 style="margin: 0 0 10px 0; color: #0c4a6e;">🎯 ${user.name}'s Safari Status</h4>` +
-          `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">` +
-            `<div><strong>🎾 Poké Balls:</strong> ${p.balls}</div>` +
-            `<div><strong>🏆 Score:</strong> ${p.score} BST</div>` +
-            `<div><strong>⏱️ Time Bank:</strong> ${Math.ceil(p.timeBank / 1000)}s</div>` +
-            `<div><strong>🎮 Mode:</strong> ${this.mode}</div>` +
-          `</div>` +
-          `${this.mode === 'team' && this.teamAssignments.has(user.id) ? 
-            `<div style="margin-top: 10px; text-align: center; color: #1e40af;"><strong>Team: ${this.teamAssignments.get(user.id)}</strong></div>` : ''
-          }` +
-          `<div style="text-align: center; margin-top: 10px;">` +
-            `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
-            `<button onclick="this.parentElement.parentElement.style.display='none'" style="background: #6b7280; color: white; border: none; padding: 6px 12px; margin-left: 5px; border-radius: 4px; cursor: pointer;">✖️ Close</button>` +
-          `</div>` +
-          `</div>`;
+	  if (this.showingStatus && this.statusForUser) {
+		  const user = this.participants.get(this.statusForUser)?.user; // Get user from participants instead
+		  const p = user ? this.participants.get(user.id) : null;
+		  if (user && p) {
+			  const statusHTML = 
+      `<div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 15px; border-radius: 10px; border: 2px solid #0284c7; margin-top: 10px;">` +
+      `<h4 style="margin: 0 0 10px 0; color: #0c4a6e;">🎯 ${user.name}'s Safari Status</h4>` +
+      `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">` +
+        `<div><strong>🎾 Poké Balls:</strong> ${p.balls}</div>` +
+        `<div><strong>🏆 Score:</strong> ${p.score} BST</div>` +
+        `<div><strong>⏱️ Time Bank:</strong> ${Math.ceil(p.timeBank / 1000)}s</div>` +
+        `<div><strong>🎮 Mode:</strong> ${this.mode}</div>` +
+				  `</div>` +
+				  `${this.mode === 'team' && this.teamAssignments.has(user.id) ? 
+					  `<div style="margin-top: 10px; text-align: center; color: #1e40af;"><strong>Team: ${this.teamAssignments.get(user.id)}</strong></div>` : ''
+      }` +
+      `<div style="text-align: center; margin-top: 10px;">` +
+        `<button name="send" value="/safari status" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">🔄 Refresh</button>` +
+        `<button onclick="this.parentElement.parentElement.style.display='none'" style="background: #6b7280; color: white; border: none; padding: 6px 12px; margin-left: 5px; border-radius: 4px; cursor: pointer;">✖️ Close</button>` +
+      `</div>` +
+      `</div>`;
 
-        html += statusHTML;
-      }
-    }
+    html += statusHTML;
+  }
+}
 
     // Add leaderboard section if showing
     if (this.showingLeaderboard) {
