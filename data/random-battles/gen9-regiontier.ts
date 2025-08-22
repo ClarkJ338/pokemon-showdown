@@ -1,5 +1,5 @@
 /**
- * Random Region vs Region Teams (OU, UU, RU) - Gen 9
+ * Random Region vs Region Teams (Single Region per Player) - Gen 9
  * Author: Musddik's custom format
  */
 
@@ -48,36 +48,73 @@ export class RandomRegionTierTeams extends RandomTeams {
 		return regionPools[tier];
 	}
 
-	randomRegion(): RegionName {
+	randomTeam(): PokemonSet[] {
+		// Determine tier from format ID
 		const tier = (this.format.id.includes('uu') ? 'uu' :
 			this.format.id.includes('ru') ? 'ru' : 'ou') as 'ou' | 'uu' | 'ru';
-		const pool = this.getRegionPoolForTier(tier);
-		return this.sample(Object.keys(pool)) as RegionName;
-	}
 
-	randomTeam(): PokemonSet[] {
-		// Pick two distinct regions
-		const region1 = this.randomRegion();
-		let region2 = this.randomRegion();
-		while (region2 === region1) {
-			region2 = this.randomRegion();
+		const pool = this.getRegionPoolForTier(tier);
+
+		// Ensure battle storage for region assignments
+		if (!this.battle.regionAssignments) {
+			this.battle.regionAssignments = {};
 		}
 
-		const tier = (this.format.id.includes('uu') ? 'uu' :
-			this.format.id.includes('ru') ? 'ru' : 'ou') as 'ou' | 'uu' | 'ru';
-		const pool = this.getRegionPoolForTier(tier);
+		let myRegion: RegionName;
 
-		// Merge both region pools
-		const combinedPool = [...pool[region1], ...pool[region2]];
+		if (!this.battle.regionAssignments.p1) {
+			// First team (Player 1)
+			myRegion = this.sample(Object.keys(pool)) as RegionName;
+			this.battle.regionAssignments.p1 = myRegion;
+		} else if (!this.battle.regionAssignments.p2) {
+			// Second team (Player 2) — pick from remaining regions
+			const remainingRegions = Object.keys(pool).filter(r => r !== this.battle.regionAssignments.p1);
+			myRegion = this.sample(remainingRegions) as RegionName;
+			this.battle.regionAssignments.p2 = myRegion;
+		} else {
+			// Fallback (shouldn't happen)
+			myRegion = this.sample(Object.keys(pool)) as RegionName;
+		}
 
-		// Pick 6 Pokémon from the combined pool
+		// Pick 6 Pokémon from that region
+		const chosenMons = this.sampleMany(pool[myRegion], 6);
+
+		// Build the team
 		const team: PokemonSet[] = [];
-		const chosenMons = this.sampleMany(combinedPool, 6);
-
 		for (const name of chosenMons) {
 			team.push(this.randomSet(name));
 		}
 
+		// Define colors for each region
+		const regionColors: {[key in RegionName]: string} = {
+			Kanto: '#FF0000',
+			Johto: '#996600',
+			Hoenn: '#009900',
+			Sinnoh: '#3366FF',
+			Unova: '#6600CC',
+			Kalos: '#FF66CC',
+			Alola: '#FF9900',
+			Galar: '#00CCCC',
+			Paldea: '#999999',
+		};
+
+		// Announce the matchup once both regions are set
+		if (this.battle.regionAssignments.p1 && this.battle.regionAssignments.p2 && !this.battle.regionAnnounced) {
+			const r1 = this.battle.regionAssignments.p1;
+			const r2 = this.battle.regionAssignments.p2;
+			const tierName = tier.toUpperCase();
+
+			// Get player names
+			const p1Name = this.battle.p1.name;
+			const p2Name = this.battle.p2.name;
+
+			this.battle.add(
+				'message',
+				`🌍 <b><span style="color:${regionColors[r1]}">${p1Name} (${r1})</span></b> vs <b><span style="color:${regionColors[r2]}">${p2Name} (${r2})</span></b> — ${tierName} Showdown!`
+			);
+			this.battle.regionAnnounced = true;
+		}
+
 		return team;
 	}
-		}
+					}
