@@ -5005,24 +5005,48 @@ export const Formats: import('../sim/dex-formats').FormatList = [
 		column: 1,
 	},
 	{
-		name: "[Gen 9] Region vs Region OU Random Battle",
-		desc: "Random competitive OU teams from two different regions face off",
+		name: "[Gen 9] Random Region Battle",
 		mod: 'gen9',
-		team: 'regionTier',
-		ruleset: ['standard'],
-	},
-	{
-		name: "[Gen 9] Region vs Region UU Random Battle",
-		desc: "Random competitive UU teams from two different regions face off",
-		mod: 'gen9',
-		team: 'regionTier',
-		ruleset: ['standard'],
-	},
-	{
-		name: "[Gen 9] Region vs Region RU Random Battle",
-		desc: "Random competitive RU teams from two different regions face off",
-		mod: 'gen9',
-		team: 'regionTier',
-		ruleset: ['standard'],
+		team: 'random',
+		ruleset: ['Obtainable', 'Species Clause', 'HP Percentage Mod', 'Cancel Mod'],
+
+		onBegin() {
+			// Define Pokémon pools by region
+			const Regions: {[region: string]: string[]} = {
+				kanto: ['Venusaur', 'Charizard', 'Blastoise', 'Pikachu', 'Alakazam', 'Gengar', 'Dragonite', 'Snorlax', 'Machamp', 'Lapras'],
+				johto: ['Typhlosion', 'Feraligatr', 'Meganium', 'Ampharos', 'Scizor', 'Heracross', 'Tyranitar', 'Kingdra', 'Crobat', 'Houndoom'],
+				hoenn: ['Sceptile', 'Blaziken', 'Swampert', 'Gardevoir', 'Metagross', 'Salamence', 'Milotic', 'Flygon', 'Ludicolo', 'Walrein'],
+				sinnoh: ['Torterra', 'Infernape', 'Empoleon', 'Garchomp', 'Lucario', 'Roserade', 'Togekiss', 'Weavile', 'Magnezone', 'Gliscor'],
+				unova: ['Serperior', 'Emboar', 'Samurott', 'Excadrill', 'Hydreigon', 'Chandelure', 'Volcarona', 'Conkeldurr', 'Haxorus', 'Reuniclus'],
+				kalos: ['Greninja', 'Talonflame', 'Aegislash', 'Goodra', 'Noivern', 'Barbaracle', 'Trevenant', 'Malamar', 'Hawlucha', 'Florges'],
+				alola: ['Decidueye', 'Incineroar', 'Primarina', 'Togedemaru', 'Kommo-o', 'Mimikyu', 'Toxapex', 'Mudsdale', 'Lycanroc', 'Salazzle'],
+				galar: ['Rillaboom', 'Cinderace', 'Inteleon', 'Dragapult', 'Corviknight', 'Grimmsnarl', 'Duraludon', 'Obstagoon', 'Coalossal', 'Toxtricity'],
+				paldea: ['Meowscarada', 'Skeledirge', 'Quaquaval', 'Annihilape', 'Garganacl', 'Baxcalibur', 'Kilowattrel', 'Clodsire', 'Tinkaton', 'Iron Valiant'],
+			}
+
+			// Pick regions for each player
+			const allRegions = Object.keys(Regions);
+			const p1Region = this.sample(allRegions);
+			const p2Region = this.sample(allRegions.filter(r => r !== p1Region));
+
+			this.add(`message 🎌 Player 1's region: ${p1Region.toUpperCase()}`);
+			this.add(`message 🎌 Player 2's region: ${p2Region.toUpperCase()}`);
+
+			// Generate teams
+			this.p1.team = this.generateRegionTeam(p1Region, Regions);
+			this.p2.team = this.generateRegionTeam(p2Region, Regions);
+		}
+
+		// Generate a team with competitive sets
+		generateRegionTeam(region: string, Regions: {[region: string]: string[]}) {
+			const pool = [...Regions[region]];
+			const team = [];
+			while (team.length < 6 && pool.length) {
+				const mon = this.sampleNoReplace(pool);
+				// Pulls a competitive set from Showdown's Random Battle data
+				team.push(this.randomSet(mon));
+			}
+			return team;
+		}
 	},
 ];
