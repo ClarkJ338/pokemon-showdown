@@ -4998,4 +4998,31 @@ export const Formats: import('../sim/dex-formats').FormatList = [
 		battle: { trunc: Math.trunc },
 		ruleset: ['HP Percentage Mod', 'Cancel Mod', 'Desync Clause Mod', 'Max Team Size = 24', 'Max Move Count = 24', 'Max Level = 9999', 'Default Level = 100'],
 	},
+
+	// ===== Impulse Region vs Region Formats =====
+	{
+		section: "Impulse Region vs Region",
+		column: 1,
+	},
+	{
+		name: "[Gen 9] Region vs Region OU Random Battle",
+		desc: "Random competitive OU teams from two different regions face off",
+		mod: 'gen9',
+		team: 'randomRegionTier',
+		ruleset: ['Obtainable', 'Species Clause', 'HP Percentage Mod', 'Sleep Clause Mod'],
+	},
+	{
+		name: "[Gen 9] Region vs Region UU Random Battle",
+		desc: "Random competitive UU teams from two different regions face off",
+		mod: 'gen9',
+		team: 'randomRegionTier',
+		ruleset: ['Obtainable', 'Species Clause', 'HP Percentage Mod', 'Sleep Clause Mod'],
+	},
+	{
+		name: "[Gen 9] Region vs Region RU Random Battle",
+		desc: "Random competitive RU teams from two different regions face off",
+		mod: 'gen9',
+		team: 'randomRegionTier',
+		ruleset: ['Obtainable', 'Species Clause', 'HP Percentage Mod', 'Sleep Clause Mod'],
+	},
 ];
