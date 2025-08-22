@@ -5009,20 +5009,20 @@ export const Formats: import('../sim/dex-formats').FormatList = [
 		desc: "Random competitive OU teams from two different regions face off",
 		mod: 'gen9',
 		team: 'regionTier',
-		ruleset: ['Obtainable', 'Species Clause', 'HP Percentage Mod', 'Sleep Clause Mod'],
+		ruleset: ['standard'],
 	},
 	{
 		name: "[Gen 9] Region vs Region UU Random Battle",
 		desc: "Random competitive UU teams from two different regions face off",
 		mod: 'gen9',
 		team: 'regionTier',
-		ruleset: ['Obtainable', 'Species Clause', 'HP Percentage Mod', 'Sleep Clause Mod'],
+		ruleset: ['standard'],
 	},
 	{
 		name: "[Gen 9] Region vs Region RU Random Battle",
 		desc: "Random competitive RU teams from two different regions face off",
 		mod: 'gen9',
 		team: 'regionTier',
-		ruleset: ['Obtainable', 'Species Clause', 'HP Percentage Mod', 'Sleep Clause Mod'],
+		ruleset: ['standard'],
 	},
 ];
