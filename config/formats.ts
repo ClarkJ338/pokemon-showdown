@@ -5022,7 +5022,7 @@ export const Formats: import('../sim/dex-formats').FormatList = [
 				alola: ['Decidueye', 'Incineroar', 'Primarina', 'Togedemaru', 'Kommo-o', 'Mimikyu', 'Toxapex', 'Mudsdale', 'Lycanroc', 'Salazzle'],
 				galar: ['Rillaboom', 'Cinderace', 'Inteleon', 'Dragapult', 'Corviknight', 'Grimmsnarl', 'Duraludon', 'Obstagoon', 'Coalossal', 'Toxtricity'],
 				paldea: ['Meowscarada', 'Skeledirge', 'Quaquaval', 'Annihilape', 'Garganacl', 'Baxcalibur', 'Kilowattrel', 'Clodsire', 'Tinkaton', 'Iron Valiant'],
-			}
+			};
 
 			// Pick regions for each player
 			const allRegions = Object.keys(Regions);
@@ -5035,7 +5035,7 @@ export const Formats: import('../sim/dex-formats').FormatList = [
 			// Generate teams
 			this.p1.team = this.generateRegionTeam(p1Region, Regions);
 			this.p2.team = this.generateRegionTeam(p2Region, Regions);
-		}
+		},
 
 		// Generate a team with competitive sets
 		generateRegionTeam(region: string, Regions: {[region: string]: string[]}) {
@@ -5047,6 +5047,6 @@ export const Formats: import('../sim/dex-formats').FormatList = [
 				team.push(this.randomSet(mon));
 			}
 			return team;
-		}
+		},
 	},
 ];
