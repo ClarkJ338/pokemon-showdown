@@ -5004,25 +5004,4 @@ export const Formats: import('../sim/dex-formats').FormatList = [
 		section: "Impulse Region vs Region",
 		column: 1,
 	},
-	{
-		name: "[Gen 9] Region vs Region OU Random Battle",
-		desc: "Random competitive OU teams from two different regions face off",
-		mod: 'gen9',
-		team: 'regionTier',
-		ruleset: ['standard'],
-	},
-	{
-		name: "[Gen 9] Region vs Region UU Random Battle",
-		desc: "Random competitive UU teams from two different regions face off",
-		mod: 'gen9',
-		team: 'regionTier',
-		ruleset: ['standard'],
-	},
-	{
-		name: "[Gen 9] Region vs Region RU Random Battle",
-		desc: "Random competitive RU teams from two different regions face off",
-		mod: 'gen9',
-		team: 'regionTier',
-		ruleset: ['standard'],
-	},
 ];
