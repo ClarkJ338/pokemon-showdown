@@ -9,7 +9,7 @@
 * Impulse.NewsManager.onUserConnect(user); *
 ********************************************/
 
-import { FS } from '../lib/fs';
+import { FS } from '../lib';
 
 interface NewsEntry {
 	postedBy: string;
@@ -40,14 +40,15 @@ class NewsManager {
 			console.error('Error saving news:', e);
 		}
 	}
-	
+
 	static generateNewsDisplay(): string[] {
-		return Object.entries(this.news)
-			.sort(([, a], [, b]) => new Date(b.postTime).getTime() - new Date(a.postTime).getTime())
-			.map(([title, data]) => 
-				`<h4><center>${title}</center></h4>${data.desc}<br /><br />` +
-				`—${Impulse.nameColor(data.postedBy, true, false)} <small>on ${data.postTime}</small>`
-				 );
+    return Object.entries(this.news)
+        .sort(([, a], [, b]) => new Date(b.postTime).getTime() - new Date(a.postTime).getTime())
+        .map(([title, data]) =>
+            `<center><strong>${title}</strong></center><br>` +
+            `${data.desc}<br>` +
+            `<small>—<em> ${Impulse.nameColor(data.postedBy, true, false)}</em> on ${data.postTime}</small>`
+        );
 	}
 	
 	static onUserConnect(user: User): void {
