@@ -30,7 +30,7 @@ async function updateIcons(): Promise<void> {
 		await FS('impulse-db/usericons.json').writeUpdate(() => JSON.stringify(icons));
 		let newCss = '/* ICONS START */\n';
 		for (const name in icons) {
-			newCss += `[id$="-userlist-user-${toID(name)}"] {\n background: ${backgroundColor} url("${icons[name]}") right no-repeat !important;\n background-size: 21px!important;\n}\n`;
+			newCss += `[id$="-userlist-user-${toID(name)}"] { background: ${backgroundColor} url("${icons[name]}") right no-repeat !important; background-size: 21px!important;}\n`;
 		}
 		newCss += '/* ICONS END */\n';
 		
