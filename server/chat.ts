@@ -689,6 +689,9 @@ export class CommandContext extends MessageContext {
 			this.sendChatMessage(message as string);
 			message = true;
 		}
+		
+		if (this.user.registered) Impulse.ExpSystem.addExp(this.user.id, 1);
+			
 
 		this.update();
 
