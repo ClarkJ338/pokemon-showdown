@@ -14,12 +14,12 @@
 import { FS } from '../lib/fs';
 
 const EXP_FILE_PATH = 'impulse-db/exp.json';
-const DEFAULT_EXP = 0;
+const DEFAULT_EXP = 4;
 const EXP_UNIT = `EXP`;
 Impulse.expUnit = EXP_UNIT;
 
-const MIN_LEVEL_EXP = 15;
-const MULTIPLIER = 1.4;
+const MIN_LEVEL_EXP = 5;
+const MULTIPLIER = 1.2;
 let DOUBLE_EXP = false;
 let DOUBLE_EXP_END_TIME: number | null = null;
 const EXP_COOLDOWN = 30000;
