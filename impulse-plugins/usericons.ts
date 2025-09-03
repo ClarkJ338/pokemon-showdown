@@ -7,7 +7,7 @@
 import { FS } from '../lib/fs';
 
 // Change this to match your server's userlist color.
-const backgroundColor = `rgba(17, 72, 79, 0.6)`;
+const backgroundColor = `linear-gradient(to bottom, #fef7ff, #fce4ec)`;
 const STAFF_ROOM_ID = 'staff';
 
 interface Icons {
