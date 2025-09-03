@@ -111,7 +111,7 @@ function generateCSS(name: string, color: string): string {
 export const commands: Chat.ChatCommands = {
   customcolor: {
     set(target: string, room: ChatRoom, user: User): void {
-      this.checkCan('globalban');
+      this.checkCan('ban');
       const targets: string[] = target.split(',').map(t => t.trim());
       if (!targets[1]) return this.parse('/help customcolor');
       const targetId = toID(targets[0]);
@@ -128,7 +128,7 @@ export const commands: Chat.ChatCommands = {
     },
 
     delete(target: string, room: ChatRoom, user: User): void {
-      this.checkCan('globalban');
+      this.checkCan('ban');
       if (!target) return this.parse('/help customcolor');
       const targetId: string = toID(target);
       if (!customColors[targetId]) return this.errorReply(`/customcolor - ${target} does not have a custom color.`);
@@ -155,7 +155,7 @@ export const commands: Chat.ChatCommands = {
     },
 
     reload(target: string, room: ChatRoom, user: User): void {
-      this.checkCan('lockdown');
+      this.checkCan('ban');
       updateColor();
       this.privateModAction(`(${user.name} has reloaded custom colours.)`);
     },
