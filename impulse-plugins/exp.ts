@@ -14,7 +14,7 @@
 import { FS } from '../lib/fs';
 
 const EXP_FILE_PATH = 'impulse-db/exp.json';
-const DEFAULT_EXP = 4;
+const DEFAULT_EXP = 0;
 const EXP_UNIT = `EXP`;
 Impulse.expUnit = EXP_UNIT;
 
