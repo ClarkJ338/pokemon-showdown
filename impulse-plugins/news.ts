@@ -102,7 +102,7 @@ export const commands: Chat.Commands = {
 			const [title, ...descParts] = target.split(',');
 			if (!descParts.length) return this.errorReply("Usage: /news add [title], [desc]");
 			const result = NewsManager.addNews(title.trim(), descParts.join(',').trim(), user);
-			this.modlog('NEWS', null, result);
+			this.sendReply(`You have added news with title ${title}`);
 		},
 		
 		remove: 'delete',
@@ -111,7 +111,7 @@ export const commands: Chat.Commands = {
 			if (!target) return this.parse('/help servernews');
 			const result = NewsManager.deleteNews(target);
 			if (result) {
-				this.modlog('NEWS', null, result);
+				this.sendReply(`You've removed news with title ${target}`);
 			} else {
 				this.errorReply("News with this title doesn't exist.");
 			}
