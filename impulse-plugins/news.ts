@@ -46,7 +46,7 @@ class NewsManager {
         .sort(([, a], [, b]) => new Date(b.postTime).getTime() - new Date(a.postTime).getTime())
         .map(([title, data]) =>
             `<center><strong>${title}</strong></center><br>` +
-            `${data.desc}<br>` +
+            `${data.desc}<br><br>` +
             `<small>—<em> ${Impulse.nameColor(data.postedBy, true, false)}</em> on ${data.postTime}</small>`
         );
 	}
