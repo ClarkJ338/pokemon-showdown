@@ -48,7 +48,7 @@ async function updateSymbolColors(): Promise<void> {
 export const commands: Chat.ChatCommands = {
 	symbolcolor: {
 		async set(this: CommandContext, target: string, room: Room, user: User) {
-			this.checkCan('globalban');
+			this.checkCan('ban');
 			const [name, imageUrl] = target.split(',').map(s => s.trim());
 			if (!name || !imageUrl) return this.parse('/help symbolcolor');
 			const userId = toID(name);
@@ -70,7 +70,7 @@ export const commands: Chat.ChatCommands = {
 		},
 
 		async delete(this: CommandContext, target: string, room: Room, user: User) {
-			this.checkCan('globalban');
+			this.checkCan('ban');
 			const userId = toID(target);
 			if (!symbolcolors[userId]) return this.errorReply(`${target} does not have a symbol color.`);
 			delete symbolcolors[userId];
