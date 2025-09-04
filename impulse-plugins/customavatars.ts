@@ -21,6 +21,7 @@ const VALID_EXTENSIONS = ['.jpg', '.png', '.gif'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const REQUIRED_WIDTH = 80;
 const REQUIRED_HEIGHT = 80;
+const AVATAR_BASE_URL = 'https://impulse-server.fun/avatars/';
 
 function getExtension(filename: string): string {
 	const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
@@ -113,6 +114,7 @@ export const commands: Chat.ChatCommands = {
 				Config.customavatars[userId] = userId + ext;
 
 				const { resized } = await downloadAndValidateImage(parsedUrl.href, userId, ext);
+				const avatarUrl = `${AVATAR_BASE_URL}${userId}${ext}`;
 
 				let note = '';
 				if (!SHARP_AVAILABLE) {
@@ -126,14 +128,14 @@ export const commands: Chat.ChatCommands = {
 				this.sendReplyBox(
 					`✅ <b>${name}'s avatar was successfully set.</b><br />` +
 					`Stored locally as: <code>${userId + ext}</code><br />` +
-					`<img src='${parsedUrl.href}' width='80' height='80'>${note}`
+					`<img src='${avatarUrl}' width='80' height='80'>${note}`
 				);
 
 				const targetUser = Users.get(userId);
 				if (targetUser) {
 					targetUser.popup(
 						`|html|${Impulse.nameColor(user.name, true, true)} set your custom avatar.<br />` +
-						`<center><img src='${parsedUrl.href}' width='80' height='80'></center>`
+						`<center><img src='${avatarUrl}' width='80' height='80'></center>`
 					);
 				}
 
@@ -145,7 +147,7 @@ export const commands: Chat.ChatCommands = {
 						`|html|<div class="infobox">` +
 						`${Impulse.nameColor(user.name, true, true)} set custom avatar for ` +
 						`${Impulse.nameColor(name, true, false)}: ` +
-						`<img src='${parsedUrl.href}' width='80' height='80'>${note}` +
+						`<img src='${avatarUrl}' width='80' height='80'>${note}` +
 						`</div>`
 					).update();
 				}
@@ -201,7 +203,8 @@ export const commands: Chat.ChatCommands = {
 			html += `<div style="max-height:320px;overflow:auto;margin-top:5px;"><table border="1" cellspacing="0" cellpadding="4"><tr><th>User</th><th>Avatar</th></tr>`;
 			for (const userid of keys) {
 				const file = avatars[userid];
-				html += `<tr><td>${userid}</td><td><img src="/config/avatars/${file}" width="80" height="80"></td></tr>`;
+				const url = `${AVATAR_BASE_URL}${file}`;
+				html += `<tr><td>${userid}</td><td><img src="${url}" width="80" height="80"></td></tr>`;
 			}
 			html += `</table></div></details>`;
 			this.sendReplyBox(html);
@@ -222,3 +225,4 @@ export const commands: Chat.ChatCommands = {
 		);
 	},
 };
+	
