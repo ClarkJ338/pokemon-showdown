@@ -262,7 +262,7 @@ export const commands: ChatCommands = {
 			'<div class="broadcast-blue"><strong>[FILE MANAGEMENT HELP]</strong><br><br>' +
 			'<b>/fileupload [path]</b> OR <b>/fu [path]</b> - Upload file to GitHub Gist<br>' +
 			'<b>/fileread [path]</b> OR <b>/fr [path]</b> - Read file contents<br>' +
-			'<b>/filesave [path],[content]</b> OR <b>/fs [path],[content]</b> - Save/overwrite file<br>' +
+			'<b>/filesave [path],[raw gist url]</b> OR <b>/fs [path],[raw gist url]</b> - Save/overwrite file<br>' +
 			'<b>/filedelete confirm,[path]</b> OR <b>/fd confirm,[path]</b> - Delete file<br><br>' +
 			'<i>Note: Only console/owner accounts can actually use these commands.</i>' +
 			'</div>'
