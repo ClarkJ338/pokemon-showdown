@@ -194,6 +194,7 @@ export const commands: Chat.ChatCommands = {
 
 		list(this: CommandContext) {
 			this.checkCan('bypassall');
+			if (!this.runBroadcast()) return;
 			const avatars = Config.customavatars || {};
 			const keys = Object.keys(avatars).sort();
 			if (!keys.length) {
