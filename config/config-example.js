@@ -573,7 +573,7 @@ exports.chatlogreader = 'fs';
  */
 exports.grouplist = [
 	{
-		symbol: '§',
+		symbol: '🐻‍❄️ྀིྀི',
 		id: "owner",
 		name: "Owner",
 		inherit: "~",
