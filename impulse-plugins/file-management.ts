@@ -1,288 +1,272 @@
 /* Server Files Management Commands
-*
-* Instructions:
-* - Important: Obtain a GitHub "personal access token" with the "gist" permission.
-* - Set this token as Config.githubToken in your configuration.
-* - (Directly adding the token to the code is strongly discouraged for security).
-* - These commands are restricted to users with console access for security.
-*
-* Credits: HoeenHero ( Original HasteBin Code )
-* Updates & Typescript Conversion:
-* Prince Sky
-*/
+ *
+ * Instructions:
+ * - Obtain a GitHub "personal access token" with the "gist" permission.
+ * - Set this token as Config.githubToken in your configuration.
+ * - These commands are restricted to console/owner accounts for security.
+ *
+ * Credits: HoeenHero ( Original HasteBin Code )
+ * Updates & Typescript Conversion: Prince Sky
+ */
 
-import * as https from 'https';
-import { FS } from '../lib/fs';
+import * as https from "https";
+import { FS } from "../lib/fs";
 
-const GITHUB_API_URL = 'https://api.github.com/gists';
-const GITHUB_TOKEN = Config.githubToken || "";
+const GITHUB_API_URL = "https://api.github.com/gists";
+const GITHUB_TOKEN: string | undefined = Config.githubToken;
 
 interface GistResponse {
   id: string;
   html_url: string;
 }
 
-function notifyStaff(action: string, file: string, user: any, additionalInfo?: string) {
-  const staffRoom = Rooms.get('staff');
-  if (staffRoom) {
-    let message = `<strong>[FILE MANAGEMENT]</strong> ${action}<br>`;
-    message += `<strong>File:</strong> ${file}<br>`;
-    message += `<strong>User:</strong> <username>${user.id}</username>`;
-    if (additionalInfo) {
-      message += `<br>${additionalInfo}`;
-    }
-    staffRoom.addRaw(`<div class="broadcast-blue">${message}</div>`).update();
-  }
+function notifyStaff(action: string, file: string, user: User, info = "") {
+  const staffRoom = Rooms.get("staff");
+  if (!staffRoom) return;
+
+  const safeFile = Chat.escapeHTML(file);
+  const safeUser = Chat.escapeHTML(user.id);
+
+  const message =
+    '<div class="broadcast-blue">' +
+    '<strong>[FILE MANAGEMENT]</strong> ' + action + '<br>' +
+    '<strong>File:</strong> ' + safeFile + '<br>' +
+    '<strong>User:</strong> <username>' + safeUser + '</username><br>' +
+    (info ? Chat.escapeHTML(info) : '') +
+    '</div>';
+
+  staffRoom.addRaw(message).update();
 }
 
-async function uploadToGist(toUpload: string, originalFilenameWithPath: string, description = 'Uploaded via bot') {
+function notifyUserBox(
+  context: Chat.CommandContext,
+  action: string,
+  file: string,
+  user: User,
+  link = "",
+  info = ""
+) {
+  const safeFile = Chat.escapeHTML(file);
+  const safeUser = Chat.escapeHTML(user.id);
+
+  const message =
+    '<div class="broadcast-blue">' +
+    '<strong>[FILE MANAGEMENT]</strong> ' + action + '<br>' +
+    '<strong>File:</strong> ' + safeFile + '<br>' +
+    '<strong>User:</strong> <username>' + safeUser + '</username>' +
+    (link ? '<br><strong>Source:</strong> ' + Chat.escapeHTML(link) : '') +
+    (info ? '<br>' + Chat.escapeHTML(info) : '') +
+    '</div>';
+
+  context.sendReplyBox(message);
+}
+
+async function githubRequest<T>(
+  method: "POST" | "PATCH",
+  path: string,
+  data: Record<string, any>
+): Promise<T> {
   if (!GITHUB_TOKEN) {
-    throw new Error('GitHub token not found.');
+    throw new Error("GitHub token not configured in Config.githubToken");
   }
 
-  const parts = originalFilenameWithPath.split('/');
-  const baseFilename = parts[parts.length - 1];
+  const postData = JSON.stringify(data);
 
-  const postData = JSON.stringify({
-    description: description,
-    public: false,
-    files: {
-      [baseFilename]: {
-        content: toUpload,
-      },
-    },
-  });
-
-  const reqOpts = {
-    hostname: 'api.github.com',
-    path: '/gists',
-    method: 'POST',
+  const options: https.RequestOptions = {
+    hostname: "api.github.com",
+    path,
+    method,
     headers: {
-      'User-Agent': 'YourBotName',
-      'Authorization': `Bearer ${GITHUB_TOKEN}`,
-      'Content-Type': 'application/json',
-      'Content-Length': postData.length,
+      "User-Agent": Config.serverid || "PS-FileManager",
+      Authorization: "Bearer " + GITHUB_TOKEN,
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(postData),
     },
   };
 
-  return new Promise<string>((resolve, reject) => {
-    const req = https.request(reqOpts, (res) => {
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      res.on('end', () => {
-        if (res.statusCode === 201) {
-          try {
-            const gistResponse: GistResponse = JSON.parse(data);
-            resolve(gistResponse.html_url);
-          } catch (e) {
-            reject(new Error(`Failed to parse GitHub API response: ${e}`));
-          }
-        } else {
-          reject(new Error(`GitHub API error: ${res.statusCode} - ${data}`));
+  return new Promise<T>((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let body = "";
+      res.on("data", (chunk) => (body += chunk));
+      res.on("end", () => {
+        if (!res.statusCode || res.statusCode >= 400) {
+          return reject(
+            new Error("GitHub API error " + res.statusCode + ": " + body)
+          );
+        }
+        try {
+          resolve(JSON.parse(body));
+        } catch {
+          reject(new Error("Failed to parse GitHub API response"));
         }
       });
     });
 
-    req.on('error', (error) => {
-      reject(error);
-    });
-
+    req.on("error", reject);
     req.write(postData);
     req.end();
   });
 }
 
-export const commands: Chat.ChatCommands = {
-  file: 'getfile',
-  fileretrieval: 'getfile',
-  retrievefile: 'getfile',
-  async getfile(this: CommandContext, target, room, user) {
-    if (!this.runBroadcast()) return;
-    if (!target) return this.parse('/help getfile');
-    if (!user.hasConsoleAccess(user.connections[0])) return this.errorReply("You don't have permission to use this command.");
-    const file = target.trim();
-
-    if (!GITHUB_TOKEN) {
-      return this.errorReply("The GitHub token is not set. Please configure Config.githubToken in your configuration.");
-    }
-
-    try {
-      const data = await FS(file).read();
-      try {
-        const gistUrl = await uploadToGist(data, file, `File: ${file} uploaded by ${user.id}`);
-        this.sendReplyBox(`<strong>File:</strong> ${file}<br>` +
-          //`<strong>Gist URL:</strong> <button onclick="window.open('${gistUrl}', '_blank')" style="padding: 4px 8px; background-color: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">View Gist</button><br>` +
-			 `<strong>Gist URL:</strong> <a href="${gistUrl}" target="_blank">View File</a><br>` +
-          `<strong>Command Used By:</strong> <username>${user.id}</username>`);
-        
-        // Notify staff
-        notifyStaff('File Retrieved and Uploaded to Gist', file, user);
-      } catch (error) {
-        this.errorReply(`An error occurred while attempting to upload to GitHub Gist: ${error}`);
+function fetchFromGistRaw(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    https.get(url, res => {
+      if (res.statusCode !== 200) {
+        return reject(new Error("Failed to fetch gist (HTTP " + res.statusCode + ")"));
       }
-    } catch (error) {
-      this.errorReply(`Failed to load ${file}: ${error}`);
-    }
-    if (room) room.update();
-  },
+      let data = "";
+      res.on("data", chunk => (data += chunk));
+      res.on("end", () => resolve(data));
+    }).on("error", reject);
+  });
+}
 
-  getfilehelp: [
-    '/getgile <file name>: Uploads a server file to a private GitHub Gist.',
-    'Example: /getfile config/config.js',
-    'Note: Requires Config.githubToken to be set in configuration.',
-  ],
+function validateGistRawURL(url: string): void {
+  const allowedPrefix = "https://gist.githubusercontent.com/";
+  if (!url.startsWith(allowedPrefix)) {
+    throw new Error("Invalid URL. Only raw gist URLs from gist.githubusercontent.com are allowed.");
+  }
+}
 
-  forcewritefile: 'writefile',
-  async writefile(this: CommandContext, target, room, user, connection, cmd) {
-    if (!user.hasConsoleAccess(user.connections[0])) return this.errorReply("You don't have permission to use this command.");
-    if (!this.runBroadcast()) return;
-    const targets = target.split(',').map(x => x.trim());
-    if (targets.length !== 2) return this.errorReply(`/writefile [github gist raw link to write from], [file to write too]`);
-    if (!targets[0].startsWith('https://gist.githubusercontent.com/')) return this.errorReply(`Link must start with https://gist.githubusercontent.com/`);
-    try {
-      FS(targets[1]).readSync();
-    } catch (e) {
-      if (cmd !== 'forcewritefile') return this.errorReply(`The file "${targets[1]}" was not found. Use /forcewritefile to forcibly create & write to the file.`);
-    }
-    try {
-      const response = await new Promise<string>((resolve, reject) => {
-        https.get(targets[0], (res) => {
-          let data = '';
-          res.on('data', (part) => {
-            data += part;
-          });
-          res.on('end', () => {
-            if (res.statusCode === 200) {
-              resolve(data);
-            } else {
-              reject(new Error(`Failed to fetch Gist content: ${res.statusCode}`));
-            }
-          });
-          res.on('error', reject);
-        }).on('error', reject);
-      });
-      FS(targets[1]).writeSync(response);
-      this.sendReplyBox(`<strong>File:</strong> ${targets[1]}<br>` +
-        `<strong>Source:</strong> <button onclick="window.open('${targets[0]}', '_blank')" style="padding: 4px 8px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">View Source</button><br>` +
-        `<strong>Command Used By:</strong> <username>${user.id}</username><br>` +
-        `<strong>Status:</strong> Written successfully`);
-      
-      // Notify staff
-      const actionType = cmd === 'forcewritefile' ? 'File Force Written' : 'File Written';
-      notifyStaff(actionType, targets[1], user);
-    } catch (error) {
-      this.errorReply(`An error occurred while fetching or writing the file:\t${error}`);
-    }
-  },
+class FileManager {
+  static async uploadToGist(
+    content: string,
+    filePath: string,
+    description = "Uploaded via bot"
+  ): Promise<string> {
+    const baseFilename = filePath.split("/").pop()!;
+    const response = await githubRequest<GistResponse>("POST", "/gists", {
+      description,
+      public: false,
+      files: {
+        [baseFilename]: { content },
+      },
+    });
+    return response.html_url;
+  }
 
-  async deletefile(this: CommandContext, target, room, user) {
-    if (!user.hasConsoleAccess(user.connections[0])) return this.errorReply("You don't have permission to use this command.");
-    if (!this.runBroadcast()) return;
-    if (!target) return this.parse('/help deletefile');
-    const file = target.trim();
+  static async readFile(filePath: string): Promise<string> {
+    return FS(filePath).readIfExists();
+  }
+
+  static async writeFile(filePath: string, data: string): Promise<void> {
+    await FS(filePath).write(data);
+  }
+
+  static async deleteFile(filePath: string): Promise<void> {
+    await FS(filePath).unlinkIfExists();
+  }
+}
+
+export const commands: ChatCommands = {
+  async fileupload(target, room, user) {
+    this.runBroadcast();
+    this.canUseConsole();
+    const filePath = target.trim();
+    const fileContent = await FileManager.readFile(filePath);
+
+    if (!fileContent) return this.errorReply("File not found: " + filePath);
 
     try {
-      // Check if file exists first
-      await FS(file).read();
-      
-      // Delete the file
-      FS(file).unlinkSync();
-      
-      this.sendReplyBox(`<strong>File:</strong> ${file}<br>` +
-        `<strong>Action:</strong> Deleted successfully<br>` +
-        `<strong>Command Used By:</strong> <username>${user.id}</username><br>` +
-        `<strong>Status:</strong> <span style="color: #dc3545;">File removed</span>`);
-      
-      // Notify staff
-      notifyStaff('File Deleted', file, user, `<strong>Status:</strong> <span style="color: #dc3545;">Permanently removed</span>`);
-    } catch (error) {
-      this.errorReply(`Failed to delete ${file}: ${error}`);
+      const url = await FileManager.uploadToGist(
+        fileContent,
+        filePath,
+        "Uploaded by " + user.name
+      );
+      notifyUserBox(this, "Uploaded file", filePath, user, url);
+      notifyStaff("Uploaded file", filePath, user);
+    } catch (err: any) {
+      this.errorReply("Upload failed: " + err.message);
+      notifyUserBox(this, "Upload failed", filePath, user, "", err.message);
+      notifyStaff("Upload failed", filePath, user, err.message);
     }
-    if (room) room.update();
   },
+  fu: 'fileupload',
 
-  deletefilehelp: [
-    '/deletefile <file name>: Deletes a server file.',
-    'Example: /deletefile logs/old.log',
-    'Note: This action is irreversible. Use with caution.',
-  ],
-
-  async movefile(this: CommandContext, target, room, user) {
-    if (!user.hasConsoleAccess(user.connections[0])) return this.errorReply("You don't have permission to use this command.");
-    if (!this.runBroadcast()) return;
-    if (!target) return this.parse('/help movefile');
-    
-    const targets = target.split(',').map(x => x.trim());
-    if (targets.length !== 2) return this.errorReply('/movefile [source file], [destination file]');
-    
-    const [sourceFile, destFile] = targets;
+  async fileread(target, room, user) {
+    this.runBroadcast();
+    this.canUseConsole();
+    const filePath = target.trim();
 
     try {
-      // Check if source file exists
-      const data = await FS(sourceFile).read();
-      
-      // Write to destination
-      FS(destFile).writeSync(data);
-      
-      // Delete source file
-      FS(sourceFile).unlinkSync();
-      
-      this.sendReplyBox(`<strong>Source File:</strong> ${sourceFile}<br>` +
-        `<strong>Destination File:</strong> ${destFile}<br>` +
-        `<strong>Action:</strong> Moved successfully<br>` +
-        `<strong>Command Used By:</strong> <username>${user.id}</username><br>` +
-        `<strong>Status:</strong> <span style="color: #28a745;">File moved</span>`);
-      
-      // Notify staff
-      notifyStaff('File Moved', `${sourceFile} → ${destFile}`, user);
-    } catch (error) {
-      this.errorReply(`Failed to move ${sourceFile} to ${destFile}: ${error}`);
+      const content = await FileManager.readFile(filePath);
+      if (!content) return this.errorReply("File not found: " + filePath);
+
+      this.sendReplyBox(
+        "<b>Contents of " + Chat.escapeHTML(filePath) + ":</b><br>" +
+        "<details><summary>Show/Hide File</summary>" +
+        "<div style=\"max-height:320px; overflow:auto;\"><pre>" +
+          Chat.escapeHTML(content) +
+        "</pre></div></details>"
+      );
+    } catch (err: any) {
+      this.errorReply("Error reading file: " + err.message);
     }
-    if (room) room.update();
   },
+  fr: 'fileread',
 
-  movefilehelp: [
-    '/movefile <source file>, <destination file>: Moves a server file to a new location.',
-    'Example: /movefile logs/old.log, backup/old.log',
-    'Note: This will delete the source file after copying.',
-  ],
+  async filesave(target, room, user) {
+    this.runBroadcast();
+    this.canUseConsole();
 
-  async copyfile(this: CommandContext, target, room, user) {
-    if (!user.hasConsoleAccess(user.connections[0])) return this.errorReply("You don't have permission to use this command.");
-    if (!this.runBroadcast()) return;
-    if (!target) return this.parse('/help copyfile');
-    
-    const targets = target.split(',').map(x => x.trim());
-    if (targets.length !== 2) return this.errorReply('/copyfile [source file], [destination file]');
-    
-    const [sourceFile, destFile] = targets;
+    const [path, url] = target.split(",").map(p => p.trim());
+    if (!path || !url) {
+      return this.errorReply("Usage: /filesave path, raw-gist-url");
+    }
 
     try {
-      // Check if source file exists and read it
-      const data = await FS(sourceFile).read();
-      
-      // Write to destination
-      FS(destFile).writeSync(data);
-      
-      this.sendReplyBox(`<strong>Source File:</strong> ${sourceFile}<br>` +
-        `<strong>Destination File:</strong> ${destFile}<br>` +
-        `<strong>Action:</strong> Copied successfully<br>` +
-        `<strong>Command Used By:</strong> <username>${user.id}</username><br>` +
-        `<strong>Status:</strong> <span style="color: #17a2b8;">File copied</span>`);
-      
-      // Notify staff
-      notifyStaff('File Copied', `${sourceFile} → ${destFile}`, user);
-    } catch (error) {
-      this.errorReply(`Failed to copy ${sourceFile} to ${destFile}: ${error}`);
-    }
-    if (room) room.update();
-  },
+      validateGistRawURL(url);
+      const content = await fetchFromGistRaw(url);
+      await FileManager.writeFile(path, content);
 
-  copyfilehelp: [
-    '/copyfile <source file>, <destination file>: Copies a server file to a new location.',
-    'Example: /copyfile config/config.js, backup/config.js',
-    'Note: This preserves the original file.',
-  ],
+      notifyUserBox(this, "Saved file from Gist", path, user, url);
+      notifyStaff("Saved file from Gist", path, user);
+    } catch (err: any) {
+      this.errorReply("File save failed: " + err.message);
+      notifyUserBox(this, "File save failed", path, user, url, err.message);
+      notifyStaff("File save failed", path, user, err.message);
+    }
+  },
+  fs: 'filesave',
+
+  async filedelete(target, room, user) {
+    this.runBroadcast();
+    this.canUseConsole();
+
+    const [flag, ...pathParts] = target.split(",");
+    const confirm = flag.trim().toLowerCase() === "confirm";
+    const filePath = pathParts.join(",").trim();
+
+    if (!confirm || !filePath) {
+      return this.errorReply(
+        "Usage: /filedelete confirm, path\nExample: /filedelete confirm, data/test.txt"
+      );
+    }
+
+    try {
+      await FileManager.deleteFile(filePath);
+      notifyUserBox(this, "Deleted file", filePath, user);
+      notifyStaff("Deleted file", filePath, user);
+    } catch (err: any) {
+      this.errorReply("File deletion failed: " + err.message);
+      notifyUserBox(this, "File deletion failed", filePath, user, "", err.message);
+      notifyStaff("File deletion failed", filePath, user, err.message);
+    }
+  },
+  fd: 'filedelete',
+	
+	fm(target, room, user) {
+		this.checkCan("mute", null, room); // @ permission
+		this.sendReplyBox(
+			'<div class="broadcast-blue"><strong>[FILE MANAGEMENT HELP]</strong><br><br>' +
+			'<b>/fileupload [path]</b> OR <b>/fu [path]</b> - Upload file to GitHub Gist<br>' +
+			'<b>/fileread [path]</b> OR <b>/fr [path]</b> - Read file contents<br>' +
+			'<b>/filesave [path],[content]</b> OR <b>/fs [path],[content]</b> - Save/overwrite file<br>' +
+			'<b>/filedelete confirm,[path]</b> OR <b>/fd confirm,[path]</b> - Delete file<br><br>' +
+			'<i>Note: Only console/owner accounts can actually use these commands.</i>' +
+			'</div>'
+		);
+	},
+	filemanager: 'fm',
 };
+		 
