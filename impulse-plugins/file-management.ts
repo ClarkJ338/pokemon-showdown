@@ -256,7 +256,8 @@ export const commands: ChatCommands = {
   fd: 'filedelete',
 	
 	fm(target, room, user) {
-		this.checkCan("mute", null, room); // @ permission
+		this.checkCan('mute');
+		this.runBroadcast();
 		this.sendReplyBox(
 			'<div class="broadcast-blue"><strong>[FILE MANAGEMENT HELP]</strong><br><br>' +
 			'<b>/fileupload [path]</b> OR <b>/fu [path]</b> - Upload file to GitHub Gist<br>' +
