@@ -114,7 +114,7 @@ export const commands: Chat.ChatCommands = {
 				Config.customavatars[userId] = userId + ext;
 
 				const { resized } = await downloadAndValidateImage(parsedUrl.href, userId, ext);
-				const avatarUrl = `${AVATAR_BASE_URL}${userId}${ext}`;
+				const avatarUrl = `${AVATAR_BASE_URL}${userId}${ext}?ts=${Date.now()}`;
 
 				let note = '';
 				if (!SHARP_AVAILABLE) {
@@ -170,8 +170,11 @@ export const commands: Chat.ChatCommands = {
 
 				const targetUser = Users.get(userId);
 				if (targetUser) {
+					// Bust cache when showing deletion message
+					const avatarUrl = `${AVATAR_BASE_URL}${image}?ts=${Date.now()}`;
 					targetUser.popup(
-						`|html|${Impulse.nameColor(this.user.name, true, true)} has deleted your custom avatar.`
+						`|html|${Impulse.nameColor(this.user.name, true, true)} has deleted your custom avatar.<br />` +
+						`<center><img src='${avatarUrl}' width='80' height='80' style="opacity:0.3;filter:grayscale(100%);"></center>`
 					);
 				}
 				this.sendReply(`✅ ${target}'s avatar has been removed.`);
@@ -194,7 +197,6 @@ export const commands: Chat.ChatCommands = {
 
 		list(this: CommandContext) {
 			this.checkCan('bypassall');
-			if (!this.runBroadcast()) return;
 			const avatars = Config.customavatars || {};
 			const keys = Object.keys(avatars).sort();
 			if (!keys.length) {
@@ -204,7 +206,7 @@ export const commands: Chat.ChatCommands = {
 			html += `<div style="max-height:320px;overflow:auto;margin-top:5px;"><table border="1" cellspacing="0" cellpadding="4"><tr><th>User</th><th>Avatar</th></tr>`;
 			for (const userid of keys) {
 				const file = avatars[userid];
-				const url = `${AVATAR_BASE_URL}${file}`;
+				const url = `${AVATAR_BASE_URL}${file}?ts=${Date.now()}`;
 				html += `<tr><td>${userid}</td><td><img src="${url}" width="80" height="80"></td></tr>`;
 			}
 			html += `</table></div></details>`;
@@ -226,4 +228,3 @@ export const commands: Chat.ChatCommands = {
 		);
 	},
 };
-	
