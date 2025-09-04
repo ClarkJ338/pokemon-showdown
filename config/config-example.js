@@ -573,6 +573,14 @@ exports.chatlogreader = 'fs';
  */
 exports.grouplist = [
 	{
+		symbol: '§',
+		id: "owner",
+		name: "Owner",
+		inherit: "~",
+		jurisdiction: "u",
+		globalonly: true,
+	},
+	{
 		symbol: '~',
 		id: "admin",
 		name: "Administrator",
