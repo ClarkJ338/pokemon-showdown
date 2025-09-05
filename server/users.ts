@@ -1217,9 +1217,11 @@ export class User extends Chat.MessageContext {
 		// NOTE: can't do a this.update(...) at this point because we're no longer connected.
 	}
 	onDisconnect(connection: Connection) {
-		/*if (this.named) {
- 			Db.seen.set(this.id, Date.now());
-		},*/
+		if (this.named) {
+			db.seen.insert(this.id, Date.now()).catch(err => {
+				console.error('Error saving seen data:', err);
+			});
+		}
 		// slightly safer to do this here so that we can do this before Conn#user is nulled.
 		if (connection.openPages) {
 			for (const page of connection.openPages) {
