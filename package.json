@@ -8,6 +8,7 @@
     "esbuild": "^0.25.0",
     "mysql2": "^3.14.2",
     "lodash": "^4.17.21",
+    "autolinker": "^3.14.1",
     "preact": "^10.5.15",
     "preact-render-to-string": "^6.5.13",
     "sockjs": "^0.3.21",
