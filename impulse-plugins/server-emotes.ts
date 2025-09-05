@@ -8,6 +8,7 @@ const Autolinker = require('autolinker');
 
 const EMOTICONS_CONFIG_PATH = 'config/emoticons.json';
 const IGNORE_EMOTES_CONFIG_PATH = 'config/ignoreemotes.json';
+let EMOTE_SIZE = '40px';
 
 function parseMessage(message) {
 	if (message.substr(0, 5) === "/html") {
@@ -69,11 +70,10 @@ function saveEmoticons(): void {
 
 function parseEmoticons(message: string, room?: Room): string | false {
 	if (emoteRegex.test(message)) {
-		let size = 32;
 		let lobby = Rooms.get(`lobby`);
-		if (lobby && lobby.emoteSize) size = lobby.emoteSize;
+		if (lobby && lobby.EMOTE_SIZE) size = lobby.EMOTE_SIZE;
 		message = Impulse.parseMessage(message).replace(emoteRegex, function (match) {
-			return `<img src="${emoticons[match]}" title="${match}" height="${((room && room.emoteSize) ? room.emoteSize : size)}" width="${((room && room.emoteSize) ? room.emoteSize : size)}">`;
+			return `<img src="${emoticons[match]}" title="${match}" height="${((room && room.EMOTE_SIZE) ? room.EMOTE_SIZE : size)}" width="${((room && room.EMOTE_SIZE) ? room.EMOTE_SIZE : size)}">`;
 		});
 		return message;
 	}
@@ -117,10 +117,9 @@ export const commands: ChatCommands = {
 			emoticons[targetSplit[0]] = targetSplit[1];
 			saveEmoticons();
 
-			let size = 50;
 			let lobby = Rooms.get(`lobby`);
-			if (lobby && lobby.emoteSize) size = lobby.emoteSize;
-			if (room.emoteSize) size = room.emoteSize;
+			if (lobby && lobby.EMOTE_SIZE) size = lobby.EMOTE_SIZE;
+			if (room.EMOTE_SIZE) size = room.EMOTE_SIZE;
 
 			this.sendReply(`|raw|The emoticon ${Chat.escapeHTML(targetSplit[0])} has been added: <img src="${targetSplit[1]}" width="${size}" height="${size}">`);
 		},
@@ -160,10 +159,9 @@ export const commands: ChatCommands = {
 		list(target: string, room: Room, user: User) {
 			if (!this.runBroadcast()) return;
 
-			let size = 50;
 			let lobby = Rooms.get("lobby");
-			if (lobby && lobby.emoteSize) size = lobby.emoteSize;
-			if (room.emoteSize) size = room.emoteSize;
+			if (lobby && lobby.EMOTE_SIZE) size = lobby.EMOTE_SIZE;
+			if (room.EMOTE_SIZE) size = room.EMOTE_SIZE;
 
 			let reply = `<strong><u>Emoticons (${Object.keys(emoticons).length})</u></strong><br />`;
 			for (let emote in emoticons) reply += `(${emote} <img src="${emoticons[emote]}" height="${size}" width="${size}">)`;
@@ -194,8 +192,8 @@ export const commands: ChatCommands = {
 			if (size < 1) return this.errorReply(`Size may not be less than 1.`);
 			if (size > 200) return this.errorReply(`Size may not be more than 200.`);
 
-			room.emoteSize = size;
-			room.chatRoomData.emoteSize = size;
+			room.EMOTE_SIZE = size;
+			room.chatRoomData.EMOTE_SIZE = size;
 			Rooms.global.writeChatRoomData();
 			this.privateModAction(`${user.name} has changed emoticon size in this room to ${size}.`);
 		},
