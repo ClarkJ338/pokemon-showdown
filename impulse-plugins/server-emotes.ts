@@ -81,7 +81,7 @@ function saveEmoticons(): void {
 function parseEmoticons(message: string, room?: Room): string | false {
 	if (emoteRegex.test(message)) {
 		message = Impulse.parseMessage(message).replace(emoteRegex, (match: string): string => {
-			return `<img src="${emoticons[match]}" title="${match}" height="40" width="40">`;
+			return `<img src="${emoticons[match]}" title="${match}" height="32" width="32">`;
 		});
 		return message;
 	}
