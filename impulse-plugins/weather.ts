@@ -1,4 +1,4 @@
-const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your OpenWeatherMap API key
+const API_KEY = Config.weatherKey;
 
 export const commands: Chat.ChatCommands = {
   async weather(target: string, room: ChatRoom | null, user: User) {
