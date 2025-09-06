@@ -1,6 +1,7 @@
 /*
-Emoticon plugin
-This plugin allows you to use emoticons in both chat rooms (as long as they are enabled in the room) and private messages.
+* Emoticons Chat Commands
+* Updated By: ClarkJ338
+* @license MIT
 */
 
 import Autolinker from 'autolinker';
