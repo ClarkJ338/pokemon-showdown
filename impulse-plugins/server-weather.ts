@@ -27,7 +27,6 @@ export const commands: Chat.ChatCommands = {
 
       return this.sendReplyBox(reply);
     } catch (err) {
-      console.error('Weather command error:', err);
       return this.errorReply('Error fetching weather data. Please try again later.');
     }
   },
