@@ -16,6 +16,16 @@ exports.port = 8000;
 exports.bindaddress = '0.0.0.0';
 
 /**
+ * Impulse Configs
+ */
+
+exports.emoteSize = '32';
+
+exports.githubKey = '';
+
+exports.weatherKey = '';
+
+/**
  * wsdeflate - compresses WebSocket messages
  *  Toggles use of the Sec-WebSocket-Extension permessage-deflate extension.
  *  This compresses messages sent and received over a WebSocket connection
